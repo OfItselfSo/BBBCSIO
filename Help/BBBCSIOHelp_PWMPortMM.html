@@ -1,0 +1,199 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>The BBBCSIO Help: The PWMPortMM Class</title>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  <meta name="description" content="The BBBCSIO software is a C# Input/Output Library for the Beaglebone Black" />
+  <meta name="keywords" content="Beaglebone Black C# Mono Pulse Width Modulation PWM Library" />   
+  <link rel="stylesheet" type="text/css" href="OISHelp.css" />
+</head>
+<body>
+<center><h2>BBBCSIO</h2></center>
+<center><h1>The PWMPortMM Class</h1></center>
+<P> 
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_PWMPortEnum.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_ClassDocs.html">BBBCSIO Classes</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| Next  &gt;&gt;</div>
+<P>
+&nbsp;
+<P>
+<A name="PWMPort Class"></A>
+<h2>The PWMPortMM Class</h2>
+<P>
+The PWMPortMM class reads from the one of the eight PWM bus On Chip Peripheral (OCP) devices integrated into the Beaglebone Black CPU via the
+PWM memory Mapped access method. There was previous a BBBCSIO class of similar functionality which used the device driver access method but
+this code was removed as of version 01.06 due to problems consistently configuring it with device tree overlays.
+<P>
+&nbsp;
+<P>
+<h3>Source Code</h3>
+<DL>
+The source code for this class is available online for 
+<a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php#Download">download</a>
+and also in 
+<a href="http://www.ofitselfso.com/BBBCSIO/Source/PWMPortMM.cs.html">browseable form</a>.
+<P>
+</DL>
+
+<P>
+&nbsp;
+<P>
+<h3>Example Code</h3>
+<DL>
+Example code which demonstrates the use of this class can be found on the <a href="BBBCSIOHelp_PWMPortExample.html">PWM Port Example</a> page.
+</DL>
+
+<P>
+&nbsp;
+<P>
+<h3>Syntax</h3>
+<DL>
+<code>public class PWMPortMM : PortMM</code>
+<P>
+<DL>Provides Pulse Width Modulation (PWM) port functionality for a BeagleBone Black (Memory Mapped Version).</DL>
+<P>
+</DL>
+
+<P>
+&nbsp;
+<P>
+<h3>Public Constructors</h3>
+<DL>
+<P>
+<code>public PWMPortMM(PWMPortEnum pwmPortIn) : base(GpioEnum.GPIO_NONE)</code>
+<P>
+<DL>Constructor.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>pwmPortIn - The PWM port to access.
+</DL>
+
+<P>
+&nbsp;
+<P>
+</DL>
+<h3>Public Methods</h3>
+<DL>
+<code>public override void ClosePort()</code>
+<P>
+<DL>Closes the port.</DL>
+<P>
+&nbsp;
+</DL>
+<P>
+<DL>
+<code>public void Dispose()</code>
+<P>
+<DL>Implements IDisposable. Should be called after the class is closed to release resources.</DL>
+<P>
+&nbsp;
+<P>
+<code>public override PortDirectionEnum PortDirection()</code>
+<P>
+<DL>Gets the PortDirection</DL>
+<P>
+<DL>
+<DT>Returns
+<DD>A <i>PortDirectionEnum</i> value. This value is always <i>PortDirectionEnum.PORTDIR_OUTPUT</i>.
+</DL>
+<P>
+&nbsp;
+<P>
+<h3>Public Properties</h3>
+<DL>
+<code>public uint DutyNS { get; set; }</code>
+<P>
+<DL>Gets/Sets the duty cycle of the PWM output square wave form in nanoseconds
+<P>
+The duty cycle is the part of the wave form devoted to a high state.
+</DL>
+<P>
+<DL>
+<DT>value
+<DD>the duty cycle of the PWM output in nanoseconds. This should always
+be less than the PeriodNS.
+</DL>
+<P>
+&nbsp;
+</DL>
+
+<DL>
+<code>public double DutyPercent { get; set; }</code>
+<P>
+<DL>Gets/Sets the duty cycle of the PWM output square wave form as a percent</DL>
+<P>
+<DL>
+<DT>value
+<DD>percentage of the input value. Must be between 0 and 100.
+</DL>
+<P>
+&nbsp;
+</DL>
+
+<DL>
+<code>public uint FrequencyHz { get; set;}</code>
+<P>
+<DL>Gets/Sets the frequency of the PWM output square wave form.</DL>
+<P>
+<DL>
+<DT>value
+<DD>frequency in Hz.
+</DL>
+<P>
+&nbsp;
+</DL>
+
+<DL>
+<code>public uint PeriodNS { get; set;}</code>
+<P>
+<DL>Gets/Sets the period of the PWM output square wave form</DL>
+<P>
+<DL>
+<DT>value
+<DD>the period (1/Freq) in nano seconds.
+</DL>
+<P>
+&nbsp;
+</DL>
+
+<DL>
+<code>public PWMPortEnum PWMPort { get; }</code>
+<P>
+<DL>Gets the PWM Port. There is no Set accessor this is set in the constructor</DL>
+<P>
+<DL>
+<DT>value
+<DD>The working PWMPortEnum.
+</DL>
+<P>
+&nbsp;
+</DL>
+
+<DL>
+<code>public bool RunState { get; set;}</code>
+<P>
+<DL>Gets/Sets the run state of the PWM output square wave</DL>
+<P>
+<DL>
+<DT>value
+<DD>true - begin running, false - stop running.
+</DL>
+<P>
+&nbsp;
+</DL>
+
+<P>
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_PWMPortEnum.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_ClassDocs.html">BBBCSIO Classes</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| Next  &gt;&gt;</div>
+<P>
+
+
+</body>
+</html>
+

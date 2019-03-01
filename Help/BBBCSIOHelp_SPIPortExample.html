@@ -1,0 +1,295 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>The BBBCSIO Help: SPI Port Example Code</title>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  <meta name="description" content="The BBBCSIO software is a C# GPIO SPI/SPI Library for the Beaglebone Black" />
+  <meta name="keywords" content="Beaglebone Black C# Mono GPIO Library" />   
+  <link rel="stylesheet" type="text/css" href="OISHelp.css" />
+</head>
+<body>
+<center><h2>BBBCSIO</h2></center>
+<center><h1>SPIPort Example Code</h1></center>
+<P> 
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_Examples.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_Examples.html"> Next </A> &gt;&gt;</div>
+<P>
+&nbsp;
+<P>
+<A name="SPIPort Example Code"></A>
+<h2>About the SPIPort Class</h2>
+<P>
+The SPIPort class writes to and reads from the one of the two SPI bus On Chip Peripheral (OCP) devices integrated into the Beaglebone Black CPU. 
+In the Linux operating system there are two ways of accessing the SPI devices; the first, called SPIDev, is the 
+standard and approved Linux technique. SPIDev is a device driver and if the existence of a SPI port is detected during boot time,
+the device driver interface will be exposed as a file in the <code>/dev</code> directory of the Beaglebone Black file system. The
+SPI ports will only be detected if that port is appropriately configured in the Device Tree. 
+<P>
+The second type of access is called Memory Mapped access and this treats the Beaglebone Black's RAM memory as if it were a file. The SPI port is manipulated as if
+it were a bit at an offset in a virtual file. The BBBCSIO library does not, at this time, provide a class which utilizes Memory Mapped access
+to the SPI port - the file system based SPIDev class named <a href="BBBCSIOHelp_SPIPortFS.html">SPIPortFS</a> is the only one available.
+<P>
+There are two SPI ports on a Beaglebone Black. If these ports have been correctly configured in the Device Tree, the SPIDev device driver for that port will be accessible
+via a file in the <code>/dev</code> directory. This file will have names in the format <code>spidev&lt;spiport+1&gt;.&lt;ssline&gt;</code> where <code>&lt;spiport+1&gt</code> is
+one greater (nobody knows why) than the number of the spi port and the <code>&lt;ssline&gt;</code> is the number of the slave select (also known as the chip select) line. 
+Thus the file <code>/dev/spidev1.0</code> is the interface for the SPIDev device driver on SPI port 0 and slave select line 0. If you do not see the <code>spidev*</code> file
+in the <code>/dev</code> directory this means that the SPI device is not correctly configured in the Device Tree. By the way, these files are not the sort of files you
+can open and write text to in order control the port (like you do with the SYSFS GPIO subsystem). The spidev files are true device files and if you want them to do anything 
+you have to use an <code>ioctl()</code> call.
+<P>
+Each device on an <a href="http://en.wikipedia.org/wiki/Serial_Peripheral_Interface_Bus">SPI bus</a> has its own enable/disable line called the Slave Select (or sometimes Chip Select) line and the Beaglebone Black functions as the SPI bus master.
+Each of the two OCP SPI devices on the Beaglebone Black can theoretically control up to 4 Slave Select lines, however only 2 of the lines (CS0 and CS1) are made available 
+to the CPU's PinMux sub-system. Effectively this means that, using the SPI ports dedicated slave select lines, it is only possible to have 2 slave devices per SPI port. 
+Even worse, it appears that the cpu pin controlling CS1 of SPI0 has not been made visible on the I/O headers by the designers of the Beaglebone Black and so the SPI0 port can
+only interact with one slave device if one uses the dedicated CS lines of the SPI port. Using the nomeclature of the above SPIDev device filenames, only the files
+<code>/dev/spidev1.0</code>, <code>/dev/spidev1.1</code>, <code>/dev/spidev2.0</code> and <code>/dev/spidev2.1</code> can ever be possibly be present and even then
+the slave select line for the <code>/dev/spidev1.1</code> device (SPI0, CS1) cannot be used. However, not to worry, the SPIPortFS class has additional functionality
+which enables GPIO ports to be used as slave select lines and hence quite a large number of SPI bus devices are possible. In addition, be aware that the MOSI, MISO, CLK and slave select
+lines used by the SPI1 port are also the GPIO's used by the HDMI subsystem (just a different MuxMode). To use SPI1 you will need to disable HDMI first - which is why you will probably never
+see it configured in the Beaglebone Black Device Tree by default.
+<P>
+Please note that for the <a href="BBBCSIOHelp_SPIPortFS.html">SPIPortFS</a> class you cannot mix and match GPIO based slave select lines and the SPI ports chip select
+lines. If you use one GPIO based slave select line then all lines must be GPIO based on that port. This is because the chip select lines are tied to the SPIDev device 
+file. Once the spidev* file is opened (and it needs to be in order to write anything at all to the device) 
+the SPI port will always activate the dedicated chip select line for each write and there is no way to stop it doing this. The best
+you can do is ignore the dedicated chip select line (by leaving it unconnected and floating electrically) and using the GPIO based slave selects to activate each device. 
+<P>
+<h2>Warnings - READ THIS!!!</h2>
+<P>
+The SPI port used in the examples below is SPI0 - this must be configured in the Device Tree in order for it to be available for use.
+<P>
+The second example code below uses GPIOs 48 and 49 which are exposed as pin 15 and 23 on the P9 header. You <b>CAN NOT</b> assume that these pins are available
+as GPIO's on your Beaglebone Black and even if they are GPIO's you still cannot assume they are set as GPIO outputs (as opposed to being an inputs). 
+Any one GPIO can be used for any of about half a dozen different peripherals
+(UART, PWM, A/D, HDMI, EMMC etc.) and it is <font color="red">not a given</font> that a GPIO used in these examples or any specific GPIO is available. The GPIO's
+used in these examples may be used for other things on your Beaglebone Black.
+<P>
+Before using a GPIO as a slave select line on any SPIPort class you will need to ensure that the GPIOs are configured as outputs in exactly
+the same way as if you were going to use them with one of the <a href="BBBCSIOHelp_OutputPortExample.html">OutputPort</a> classes. There is no code you can call 
+in the BBBCSIO library which does this. You <font color="red">MUST configure the GPIOs externally</font> prior to running your executable - 
+usually this is done by <a href="http://www.OfItselfSo.com/BeagleNotes/BeagleBoneBlack_DeviceTreeConfig_GPIO.php">editing the device tree</a>.  
+<P>
+The <a href="http://www.ofitselfso.com/Beagle/InstallingArmhfKernelBeagleboneBlack.php">armhf Linux</a> running on the Beaglebone Black is <font color="red">not a real-time operating system</font>. However, an OCP peripheral such as
+the SPIPort has its own internal clock and so, once the information is given to the port, it will be transmitted and received
+at the configured port speed with no interruptions. However, transfers made via multiple calls to the SPI port can, and will, have variable gaps 
+between transmissions as the process is pre-emptively swapped in and out by the kernel.
+<P>
+Also note it is possible to set the transmission speed for the SPI Port as a default on the port and also to specifically override that speed individually for a
+slave device. For the <a href="BBBCSIOHelp_SPIPortFS.html">SPIPortFS</a> class it is much faster, by a factor of about 10, to set the port speed on the port and let the slave device use it as a default than to set it
+individually on each device. This is true even if the slave device speed is set to the exact same speed as the global SPI port default value. There is something 
+in the SPIDev device driver that has to activate internally on each transmission (one or more ioctl() calls probably) to override the SPI port default speed
+for an individual device and this is time consuming. It is far better to set the speed on the SPI port rather than the slave device unless you really need
+to have different speeds for each device.
+<P>
+There are two examples below. The <a href="#Example1">first</a> shows a write and read from a SPI slave device using the internal CS0 line. The <a href="#Example2">second example</a> illustrates the use of two GPIO
+base slave select lines to control two different SPI slave devices.
+<P>
+<A name="Example1"></A>
+<h2>Example 1, SPIPort Usage to Write and Read</h2>
+<P>
+The code below illustrates how to use the SPIPortFS class to write and read the a memory location in a slave SPI device and to output that value to the console. 
+<pre>
+        /// +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+        /// &lt;summary&gt;
+        /// Writes to and reads from an SPI port. SPIDev version. This version
+        /// uses the internal slave select SPI_SLAVEDEVICE_CS0 for the chip 
+        /// select line. The SPI device being accessed is an Arduino Gameduino v1.2 
+        /// VGA shield. At its most basic, it is read from by sending two address bytes
+        /// and then a follow up byte of 0x00 to clock in the byte at that address. 
+        /// 
+        /// NOTE: 
+        ///   This code assumes that the SPI port associated with the spiID has been 
+        ///   properly configured in the device tree. If it is not
+        ///   then the port may not work correctly. See the associated documentation
+        /// 
+        /// NOTE:
+        ///    Make sure you are aware of how SPI buses work and properly
+        ///    configure the MISO, MOSI, CLK and CS lines.
+        /// 
+        /// &lt;/summary&gt;
+        /// &lt;param name="spiID"&gt;The spi port ID&lt;/param&gt;
+        /// &lt;history&gt;
+        ///    21 Dec 14  Cynic - Originally written
+        /// &lt;/history&gt;
+        public void SPIPortFSTest(SPIPortEnum spiID)
+        {
+            // open the port
+            SPIPortFS spiPort = new SPIPortFS(spiID);
+            
+            // open the slave device
+            SPISlaveDeviceHandle ssHandle = spiPort.EnableSPISlaveDevice(SPISlaveDeviceEnum.SPI_SLAVEDEVICE_CS0);
+            if (ssHandle == null)
+            {
+                throw new Exception("ssHandle == null");
+            }
+
+            // set the mode
+            spiPort.SetMode(SPIModeEnum.SPI_MODE_0);
+            // just for testing, get the mode, not really necessary
+            SPIModeEnum spiMode = spiPort.GetMode();
+            Console.WriteLine("spi mode=" + spiMode.ToString());
+
+            // set our speed
+            spiPort.SetDefaultSpeedInHz(5000000);
+
+            // set up our transmit and receive buffers
+            int bufLen = 3;
+            byte[] txByteBuf = new byte[bufLen];
+            byte[] rxByteBuf = new byte[bufLen];
+
+            // we wish to read the byte at address 0x0001 which is
+            // the Gameduino's major and minor version number
+
+            // populate the transmit buffer with data, we send
+            // two bytes of address and a 0x00 to clock in the
+            // returning information
+            txByteBuf[0] = 0x00;
+            txByteBuf[1] = 0x01;
+            txByteBuf[2] = 0x00;
+      
+            // transfer the data
+            spiPort.SPITransfer(ssHandle, txByteBuf, rxByteBuf, bufLen);
+
+            // report the received data, the first two bytes will
+            // be random values as the Gameduino was still receiving
+            // the address at that time. The third byte will have
+            // the major and minor revision number in each nibble.
+            Console.Write("Received data as hex:");
+            for(int i=0; i &lt; bufLen; i++)
+            {
+                Console.Write(" "+ rxByteBuf[i].ToString("x2"));
+            }
+            Console.Write("\n");           
+
+            // close the port
+            spiPort.ClosePort();
+            spiPort.Dispose();
+        }
+</pre> 
+In the above code, the <code>spiID</code> is passed in when the function was called. This value is a member of the 
+<code><a href="BBBCSIOHelp_SPIPortEnum.html">SPIPortEnum class</a></code> which lists all possible SPI ports which
+can be present on the Beaglebone Black. The above code is called via a line which looks like:
+<pre>
+SPIPortFSTest(SPIPortEnum.SPIPORT_0);
+</pre> 
+<P>
+<A name="Example2"></A>
+<h2>Example 2, SPIPort Usage with GPIO's as Slave Select Lines</h2>
+<P>
+The code below illustrates how to use the SPIPortFS class to use GPIO pins as slave select lines and how to write values 
+to those devices. 
+<pre>
+        /// +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+        /// &lt;summary&gt;
+        /// Writes to an SPI port. SPIDev version. This version uses two GPIO pins 
+        /// as slave select lines for the SPI devices. 
+        /// 
+        /// The device being written to is a Sparkfun 7-Segment Serial Display
+        /// which has an SPI interface but which cannot write back any information
+        /// on the SPI bus - it is write only. The basic mode of operation is just
+        /// to write the ASCII values of the four characters you wish to display
+        /// to the device. With two devices we have 8 digits.
+        /// 
+        /// NOTE: 
+        ///   This code assumes that the SPI port associated with the spiID has been 
+        ///   properly configured in the device tree. If it is not then the port
+        ///   may not work correctly. In addition, the two GPIOs (GPIO_48 and GPIO_49)
+        ///   must also be configured as outputs. 
+        /// 
+        /// NOTE:
+        ///    Make sure you are aware of how SPI buses work and properly
+        ///    configure the MISO, MOSI, CLK and CS lines.
+        /// 
+        /// &lt;/summary&gt;
+        /// &lt;param name="spiID"&gt;The spi port ID&lt;/param&gt;
+        /// &lt;history&gt;
+        ///    21 Dec 14  Cynic - Originally written
+        /// &lt;/history&gt;
+        public void SPIPortFSGPOISSTest(SPIPortEnum spiID)
+        {
+            // open the port
+            SPIPortFS spiPort = new SPIPortFS(spiID);
+			
+            // open the slave devices. We are using GPIO_48 and GPIO_49 as slave selects
+            // but we always have to open CS0 or CS1 in order to get access to the SPI 
+            // device itself - but we cannot use this slave select line and it must
+            // not be electrically connected to anything.
+            SPISlaveDeviceHandle ssHandleCS1 = spiPort.EnableSPISlaveDevice(SPISlaveDeviceEnum.SPI_SLAVEDEVICE_CS1);
+            if (ssHandleCS1 == null)
+            {
+                throw new Exception("ssHandleCS1 == null");
+            }
+            SPISlaveDeviceHandle ssHandleGPIO48 = spiPort.EnableSPIGPIOSlaveDevice(GpioEnum.GPIO_48);
+            if (ssHandleGPIO48 == null)
+            {
+                throw new Exception("ssHandleGPIO48 == null");
+            }
+            SPISlaveDeviceHandle ssHandleGPIO49 = spiPort.EnableSPIGPIOSlaveDevice(GpioEnum.GPIO_49);
+            if (ssHandleGPIO49 == null)
+            {
+                throw new Exception("ssHandleGPIO48 == null");
+            }
+
+            // set the mode
+            spiPort.SetMode(SPIModeEnum.SPI_MODE_0);
+
+            // set our speed
+            spiPort.SetDefaultSpeedInHz(25000);
+
+            // set up our transmit and receive buffers
+            int bufLen = 4;
+            byte[] txByteBuf = new byte[bufLen];
+            byte[] rxByteBuf = new byte[bufLen];
+
+            // populate the transmit buffer with data "1234"
+            txByteBuf[0] = 0x31;
+            txByteBuf[1] = 0x32;
+            txByteBuf[2] = 0x33;
+            txByteBuf[3] = 0x34;
+
+            // NOTE that other than opening ssHandleCS1 we do not write to it. The pin
+            // where the CS1 appears should not be electrically attached to any SPI device
+            // When using GPIO based slave selects lines all SPI devices must use them
+            // when using the internal CS0 or CS1 lines all devices must use those. You
+            // cannot mix and match GPIO and CS* slave select lines.
+
+            // transfer the data to the device listening on GPIO48
+            spiPort.SPITransfer(ssHandleGPIO48, txByteBuf, rxByteBuf, bufLen);
+
+            // populate the transmit buffer with new data "5678"
+            txByteBuf[0] = 0x35;
+            txByteBuf[1] = 0x36;
+            txByteBuf[2] = 0x37;
+            txByteBuf[3] = 0x38;
+
+            // transmit the new data to the device listening on GPIO49
+            spiPort.SPITransfer(ssHandleGPIO49, txByteBuf, rxByteBuf, bufLen);
+
+            // close the port
+            spiPort.ClosePort();
+            spiPort.Dispose();
+        }
+</pre> 
+In the above code, the <code>spiID</code> is passed in when the function was called. This value is a member of the 
+<code><a href="BBBCSIOHelp_SPIPortEnum.html">SPIPortEnum class</a></code> which lists all possible SPI ports which
+can be present on the Beaglebone Black. The above code is called via a line which looks like:
+<pre>
+SPIPortFSGPOISSTest(SPIPortEnum.SPIPORT_0);
+</pre> 
+<P>
+&nbsp;
+<P>
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_Examples.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_Examples.html"> Next </A> &gt;&gt;</div>
+<P>
+
+
+</body>
+</html>
+

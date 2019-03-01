@@ -1,0 +1,129 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>The BBBCSIO Help: PRU Pin Input/Output Example Code</title>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  <meta name="description" content="The BBBCSIO software is a C# GPIO Interrupt/Output Library for the Beaglebone Black" />
+  <meta name="keywords" content="Beaglebone Black C# Mono GPIO Library" />   
+  <link rel="stylesheet" type="text/css" href="OISHelp.css" />
+</head>
+<body>
+<center><h2>BBBCSIO</h2></center>
+<center><h1>Host and PRU Pin Input/Output Example Code</h1></center>
+<P> 
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_PRUInterruptHostExample.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_PRUDriverExamples.html"> Next </A> &gt;&gt;</div>
+<P>
+&nbsp;
+<P>
+<A name="PRUPinInOut Example Code"></A>
+<h2>About the PRU Pin Input/Output Mechanism</h2>
+<P>
+There are two ways a PRU program can read or write to the pins on the Beaglebone Black's P8 and P9 header. The first method is to enable 
+the OCP master port and then manipulate the pins via the GPIO subsystem. In other words, the PRU accesses addresses in the main Beaglebone
+Blacks memory and can read or write the bits which are related to the GPIO OCP device. This is exactly the way the Linux GPIO device driver
+operates and also the method used in other examples in this series such as the <a href="BBBCSIOHelp_PRUBlinkUSR3LEDExample.html">PRU Blink USR3 LED Example</a>.
+<P>
+The second method of reading or writing to the pins on the Beaglebone Black's P8 and P9 header is to use the PRUs own internal registers 
+(rather than the Beaglebone Blacks main memory space) for the purpose of reading or writing to the inputs or outputs. This is considerably
+faster (by about a factor of 10 or 20). However there is a drawback in that the pins involved are split among, and dedicated to, a specific PRU. In other words,
+if you write some PRU code to directly read
+or write to its I/O pins then that code must necessarily be specific to either PRU0 or PRU1. 
+Fortunately there are quite a number of 
+<a href="http://www.ofitselfso.com/BeagleNotes/BeagleboneBlackPRUInputPinMuxModes.pdf" title="Beaglebone Black PRU Input PinMux Modes">input</A>
+pins and <a href="http://www.ofitselfso.com/BeagleNotes/BeagleboneBlackPRUOutputPinMuxModes.pdf" title="Beaglebone Black PRU Output PinMux Modes">output</a> 
+pins per PRU. Also note that the some of the pins cannot be configured both an input and an output like the GPIO's
+can. The pins the PRU accesses are hard coded to the PRU and are also often restricted to being either an input or and output. 
+<P>
+The upshot is that the PRU direct input and outputs are much faster but are somewhat restricted in number, are specific to the PRU and are often
+not bi-directional. The GPIO I/O method is more versatile, slower, but is able to reference pins that cannot be accessed from either PRU. A discussion
+of the PinMux and how it controls access to the I/O lines on the P8 and P9 Header can be found on 
+<a href="http://www.ofitselfso.com/BeagleNotes/BeagleboneBlackPinMuxModes.php" title="Beaglebone Black Pin Mux Modes">this page</a> and a discussion on how to 
+configure the PRU I/O pins can be found 
+<a href="http://www.ofitselfso.com/BeagleNotes/UsingDeviceTreesToConfigurePRUIOPins.php" title="Using Device Trees To Configure PRU I/O Pins">here</a>.
+<P>
+This sample code will illustrate how to use the R31 and R30 registers of PRU0 to read the high/low state of an input and to set the state of an output 
+to match that input. For the purposes of demonstration, the off/on state of the USR3 LED will also be set to follow the state of the input. The
+setting of the USR3 LED state is via the slower GPIO mechanism. There is no direct PRU output (on either PRU) which can adjust the state 
+of the USR3 LED. As mentioned previously, not all I/O is available via direct PRU access. 
+<P>
+The example below shows how to use the <a href="BBBCSIOHelp_PRUDriver.html">PRU_Driver</a> class of the 
+<a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php#Download" title="BBBCSIO Library">BBBCSIO</a> library to load the PRU binary (compiled PASM Assembler). 
+For the purposes of illustration, the example binary being loaded and run is hard coded in the sample source and you will need to 
+modify the path prior to executing it yourself.
+<P>
+<P>
+NOTE: The PRU code the example below will run is called <code>PRUPinInOut.bin</code> and the PASM Assembly Language source for this code can be found in the file
+<a href="BBBCSIOHelp_PRUPinInOutExamplePASMCode.html">BBBCSIOHelp_PRUPinInOutExamplePASMCode.html</a>. You should probably read the comments in the <code>PRUPinInOut.p</code>
+source file in order to understand the operation of this program. 
+<P>
+<h2>An Example Illustrating Pin Input and Output using a PRU Program</h2>
+<P>
+The code below illustrates how to use the launch, and interact with, a compiled PRU binary 
+using the <a href="BBBCSIOHelp_PRUDriver.html">PRU_Driver</a> class of the 
+<a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php#Download" title="BBBCSIO Library">BBBCSIO</a> library.
+
+<pre>
+        /// +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+        /// &lt;summary&gt;
+        /// A sample to launch the PRU code which demonstrates the use of 
+        /// the P8 Header Pins the PRU can access natively via its R30 and R31 
+        /// registers.
+        /// 
+        /// In this example, the ASM binary to load is hard coded. It is designed
+        /// to monitor a PRU GPIO associated with the pin on Header8 Pin 16 and
+        /// set the USR3 LED and the PRU GPIO associated with the pin on Header 8
+        /// pin 11 to match that high/low state.
+        /// 
+        /// &lt;/summary&gt;
+        /// &lt;param name="pruID"&gt;The pruID&lt;/param&gt;
+        /// &lt;history&gt;
+        ///    05 Jun 15  Cynic - Originally written
+        /// &lt;/history&gt;
+        public void PRUPinInOut(PRUEnum pruID)
+        {
+             // sanity checks
+            if (pruID == PRUEnum.PRU_NONE)
+            {
+                throw new Exception("No such PRU: "+pruID.ToString());
+            }
+            string binaryToRun = "/home/debian/CSharpCode/PASMCode/PRUGPIOInOut.bin";
+
+            // build the driver
+            PRUDriver pruDriver = new PRUDriver(pruID);
+           
+            // run the binary, pass in our initial array
+            pruDriver.ExecutePRUProgram(binaryToRun);
+
+            Console.WriteLine("Now processing. Press any key to quit");
+            Console.ReadKey().ToString();
+
+            // we can leave here and even close and dispose of the driver
+            // and the PRU code will remain running unless we explicitly 
+            // stop it
+            pruDriver.PRUStop();
+ 
+            // close the driver
+            pruDriver.Dispose();
+        }   
+</pre> 
+<P>
+The <code>PRUPinInOut</code> call would be made via a line which looks like:
+<pre>
+   PRUPinInOut(PRUEnum.PRU_0);
+</pre> 
+<P>
+&nbsp;
+<P>
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_PRUInterruptHostExample.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_PRUDriverExamples.html"> Next </A> &gt;&gt;</div>
+<P>
+</body>
+</html>
+

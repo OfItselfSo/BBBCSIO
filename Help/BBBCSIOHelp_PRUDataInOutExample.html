@@ -1,0 +1,171 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>The BBBCSIO Help: Host and PRU Data Exchange Example Code</title>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  <meta name="description" content="The BBBCSIO software is a C# GPIO Interrupt/Output Library for the Beaglebone Black" />
+  <meta name="keywords" content="Beaglebone Black C# Mono GPIO Library" />   
+  <link rel="stylesheet" type="text/css" href="OISHelp.css" />
+</head>
+<body>
+<center><h2>BBBCSIO</h2></center>
+<center><h1>Host and PRU Data Exchange Example Code</h1></center>
+<P> 
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_PRUBlinkUSR3LEDExample.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_PRUInterruptHostExample.html"> Next </A> &gt;&gt;</div>
+<P>
+&nbsp;
+<P>
+<A name="PRUDataInOut Example Code"></A>
+<h2>About the Host and PRU Data Exchange Mechanism</h2>
+<P>
+Quite often PRU programs are not intended to run in isolation. On many occasions it is desirable to exchange data between
+the PRU and a host program (running in Linux user space) or vice versa. The example code on this page is designed to illustrate how to use the
+BBBCSIO <a href="BBBCSIOHelp_PRUDriver.html">PRU_Driver</a> class to preload a data transfer buffer into the PRU and then launch a PRU binary to use it.
+The C# code will then subsequently interact with the PRU code by 
+sending the running PRU program some data for processing and then receiving and displaying the output.
+<P>
+Since this is just an example to illustrate the data transfer process we do not really do anything too complex in terms of processing in the PRU. The example code is
+designed to prompt the user to input an integer value. Once received, the integer will be passed to the PRU program which is continuously
+checking for such input. The PRU program will then simply multiply the integer by two and pass it back to the host program. A simple
+semaphore mechanism is implemented to ensure the host C# program fully writes out the integer before the PRU program processes it. Access 
+to the returned value is also coordinated by a similar semaphore. 
+<P>
+The example below shows how to use the BBBCSIO libraries <a href="BBBCSIOHelp_PRUDriver.html">PRU_Driver</a> class to load the PRU binary (compiled PASM Assembler) and 
+its initial data. For the purposes of illustration, the example binary being loaded and run is hard coded in the sample source and you will need to 
+modify the path prior to executing it yourself.
+<P>
+<P>
+NOTE: The PRU code the example below will run is called <code>PRUDataInOut.bin</code> and the PASM Assembly Language source for this code can be found in the file
+<a href="BBBCSIOHelp_PRUDataInOutExamplePASMCode.html">BBBCSIOHelp_PRUDataInOutExamplePASMCode.html</a>. You should probably read the comments in the <code>PRUDataInOut.p</code>
+source file in order to understand the operation of this program. 
+<P>
+<h2>An Example Illustrating Data Transfer To and From an executing PRU Program</h2>
+<P>
+The code below illustrates how to use the PRU_Driver class to launch a compiled PRU binary and interact with it
+using the BBBCSIO Libraries PRU_Driver class.
+
+<pre>
+        /// +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+        /// &lt;summary&gt;
+        /// A sample which illustrates passing data to and from the PRU and
+        /// a user space C# program. 
+        /// 
+        /// In this example, the PASM binary to load is hard coded. It is designed
+        /// to monitor a flag in the PRU dataspace and when it goes non-zero 
+        /// to read an UInt32 value, double it, write it back and clear the flag.
+        /// 
+        /// The C# user space code is designed to also observe that protocol and
+        /// will set the value and the flags appropriately.
+        /// 
+        /// &lt;/summary&gt;
+        /// &lt;param name="pruID"&gt;The pruID&lt;/param&gt;
+        /// &lt;history&gt;
+        ///    05 Jun 15  Cynic - Originally written
+        /// &lt;/history&gt;
+        public void PRUDataInOut(PRUEnum pruID)
+        {
+            uint numberToDouble=0;
+            byte dataFlag = 0;
+            // the number we double is stored at this offset
+            const uint NUM_TO_DOUBLE_OFFSET = 0;
+            // our flag is stored at this offset
+            const uint DATA_FLAG_OFFSET = 4;
+
+            // this is the array we use to pass in the data to the PRU. The
+            // first 4 bytes are the integer to double, and the next byte
+            // is a byte flag acting as a semaphone which indicate to the PRU
+            // that data is ready (the flag !=0). The PRU code will reset
+            // the flag to 0 to indicate that it has doubled the value
+            // and that this program can consume it.
+
+            // There are better ways of doing this (with structs) 
+            // but seeing the data locations explicitly specified
+            // is useful as a simple example.
+            byte[] dataBytes = new byte[sizeof(uint)+sizeof(byte)];
+
+            // sanity checks
+            if (pruID == PRUEnum.PRU_NONE)
+            {
+                throw new Exception("No such PRU: "+pruID.ToString());
+            }
+            string binaryToRun = "/home/debian/CSharpCode/PASMCode/PRUDataInOut.bin";
+
+            // build the driver
+            PRUDriver pruDriver = new PRUDriver(pruID);
+
+            // initialize the dataBytes array. the PRU code expects to see a 
+            // zero flag byte when it starts
+            dataBytes[0] = 0;
+            dataBytes[1] = 0;
+            dataBytes[2] = 0;
+            dataBytes[3] = 0;
+            dataBytes[4] = 0;
+
+            // run the binary, pass in our initial array
+            pruDriver.ExecutePRUProgram(binaryToRun, dataBytes);
+
+            Console.WriteLine("Now doubling integers. Press 0 to quit");
+
+            // our outer loop we operate until the user quits
+            while (true)
+            {
+                Console.WriteLine("Enter integer: ");
+                string inputStr = Console.ReadLine();
+                try
+                {
+                    numberToDouble = Convert.ToUInt32(inputStr);
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("The value " + inputStr + " is not a positive integer");
+                    continue;
+                }
+                // are we done?
+                if (numberToDouble == 0) break;
+
+                // set the flag
+                dataFlag = 1;
+                // write the data
+                pruDriver.WritePRUDataUInt32(numberToDouble, NUM_TO_DOUBLE_OFFSET);
+                // write the flag
+                pruDriver.WritePRUDataByte(dataFlag, DATA_FLAG_OFFSET);
+
+                // wait while the PRU processes the data. Most likely the
+                // PRU has already done it
+                while (true)
+                {
+                    // read the flag
+                    dataFlag = pruDriver.ReadPRUDataByte(DATA_FLAG_OFFSET);
+                    if (dataFlag == 0) break;
+                }
+                // read the data
+                uint doubledInt = pruDriver.ReadPRUDataUInt32(NUM_TO_DOUBLE_OFFSET);
+                // tell the user
+                Console.WriteLine("2x"+numberToDouble.ToString() + "=" + doubledInt.ToString());
+            }
+
+            // close the driver, the code in the PRU remains running
+            pruDriver.Dispose();
+        }      
+</pre> 
+<P>
+The <code>PRUDataInOut</code> call would be made via a line which looks like:
+<pre>
+   PRUDataInOut(PRUEnum.PRU_0);
+</pre> 
+<P>
+&nbsp;
+<P>
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_PRUBlinkUSR3LEDExample.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_PRUInterruptHostExample.html"> Next </A> &gt;&gt;</div>
+<P>
+</body>
+</html>
+

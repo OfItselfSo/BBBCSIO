@@ -1,0 +1,242 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>The BBBCSIO Help: PRU Interrupt Hose Example PASM Code</title>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  <meta name="description" content="The BBBCSIO software is a C# PRU Driver Library for the Beaglebone Black" />
+  <meta name="keywords" content="Beaglebone Black C# Mono PRU Library" />   
+  <link rel="stylesheet" type="text/css" href="OISHelp.css" />
+</head>
+<body>
+<center><h2>BBBCSIO</h2></center>
+<center><h1>PRU Interrupt Host Example PASM Code</h1></center>
+<P> 
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_PRUInterruptHostExample.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_PRUInterruptHostExample.html"> Next </A> &gt;&gt;</div>
+<P>
+&nbsp;
+<P>
+<A name="PRU2HostExamplePASMCode"></A>
+<h2>About the PRU Interrupt To Host PASM Code</h2>
+<P>
+The code below is designed to work in either PRU of the Beaglebone Black and is intended to interact with 
+the <a href="BBBCSIOHelp_PRUInterruptHostExample.html">PRUInterruptHost</a> example C# code. The comments
+in the code below and the discussion on the <a href="BBBCSIOHelp_PRUInterruptHostExample.html">PRUInterruptHost</a> example
+page describe the usage, operation and output of this example.
+<P>
+<pre>
+/// +------------------------------------------------------------------------------------------------------------------------------+
+/// |                                                   TERMS OF USE: MIT License                                                  |
+/// +------------------------------------------------------------------------------------------------------------------------------|
+/// |Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation    |
+/// |files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,    |
+/// |modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software|
+/// |is furnished to do so, subject to the following conditions:                                                                   |
+/// |                                                                                                                              |
+/// |The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.|
+/// |                                                                                                                              |
+/// |THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE          |
+/// |WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR         |
+/// |COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,   |
+/// |ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                         |
+/// +------------------------------------------------------------------------------------------------------------------------------+
+
+/// +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+///  PRUInterruptHost.p  - a PASM assembly language program, intended to run in
+///                   the Beaglebone Black PRU and which will blink the USR3 
+///                   LED a specified number of times once per second. Each
+///                   time the LED is turned on or off an interrupt is generated
+///                   for propagation to the userspace program. At the end 
+///                   an interrupt is generated to let the userspace program
+///                   know that the PRU code has terminated.
+///
+///                   This code is intended to be used with the BBBCSIO library
+///                   PRUDriver code and this code sets up a specific mapping
+///                   of interrupts to host channels. If you use other programs
+///                   to launch this code then the mapping may not be the same
+///                   (it probably won't be) and the interrupt transmission 
+///                   mechanism probably will not work. The LEDs will still 
+///                   blink. The BBBCSIO PRUDriver setup is structured so that...
+///
+///                      SYSINT16 appears on uio0. We use this for the TERMINATION signal
+///                      SYSINT17 appears on uio1. We use this for the LED ON signal
+///                      SYSINT18 appears on uio2. We use this for the LED OFF signal
+///                   
+///                   This code is intended for demonstration purposes 
+///                   and hence has loops which may be confusing to the 
+///                   novice unrolled and some code sections purposly 
+///                   duplicated to make the structure as simple and linear
+///                   as possible. It deliberately uses no include files and 
+///                   contains rather more comments than one usually finds in 
+///                   assembler source.
+///
+///                   Compile with the command
+///                      pasm -b PRUInterruptHost.p
+/// 
+///                   This code was written as part of the BBBCSIO library
+///                   which is designed to provide C#/Mono access to the 
+///                   OCP Devices and PRU on a Beaglebone Black. Since this
+///                   code is in PASM assembler, it is not really related to
+///                   C#/Mono and you could compile and then run it 
+///                   using any language which can load a binary into the 
+///                   Beaglebone Black PRU.
+///
+///               References to the PRM refer to the AM335x PRU-ICSS Reference Guide
+///               References to the TRM refer to the AM335x Sitara Processors
+///                   Technical Reference Manual
+///            
+///               History
+///                   05 Jun 15  Cynic - Originally Written
+///
+///               Home Page
+///                   http://www.ofitselfso.com/BBBCSIO/BBBCSIO.php
+/// +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+
+.origin 0
+.entrypoint START
+
+// the number of times we blink the LED
+#define NUMBER_OF_BLINKS 10
+
+// this is the address of the BBB GPIO Bank1 Register. We set bits in special locations in offsets
+// here to put a GPIO high or low. It so happens that the BBB USR LED3 is tied to the 24th bit.
+// Note GPIO's still have to be enabled in the PINMUX if you want to see the signal on the 
+// BBB P8 and P9 Headers. The USR LED3 is usually mux'ed in by default so it is a good one to
+// use as an example.
+#define GPIO_BANK1 0x4804c000
+
+// set up a value that has a 1 in bit 24. We will later use this to toggle the state of LED3
+#define GPIO1_LED3BIT 1&lt;&lt;24
+
+// at this offset various GPIOs are associated with a bit position. Writing a 32 bit value to 
+// this offset enables them (sets them high) if there is a 1 in a corresponding bit. A zero 
+// in a bit position here is ignored - it does NOT turn the associated GPIO off.
+#define GPIO_SETDATAOUT 0x194
+
+// you may think that you turn off (set low) a GPIO by writing a 0 somewhere. After all, you set it
+// high with a 1 so why not set it low with a 0. That is NOT the way it works. 
+// We set a GPIO low by writing to this offset. In the 32 bit value we write, if a bit is 1 the 
+// GPIO goes low. If a bit is 0 it is ignored. Thus we can write the same value (GPIO1_LED3BIT 
+// in this example) to two different registers in order to turn it on and then off again.
+#define GPIO_CLEARDATAOUT 0x190
+
+// this defines a memory location inside the PRU's address space which we can use to enable
+// the PRU to see the BBB's memory as if it were the PRU's memory (and other things too).
+#define REGISTER_PRUCFG 0x00026000
+
+        // this label is where the code execution starts
+START:
+
+        // Enable the OCP master port, this is what allows the PRU to read/write to the 
+        // BBB's main memory (rather than the PRU's own memory). The BBB main memory
+        // will be mapped into the PRU address space and you can use it in the PRU as
+        // if it belonged to the PRU. Note that the code below will only permit the 
+        // PRU to access BBB memory addresses above 0x0008_0000 unless you go to a bit 
+        // of extra trouble. This is because below 0x0008_0000 you are hitting the 
+        // PRU's own memory regions. See the PRM page 19 Section 3.1.1
+
+        MOV       r3, REGISTER_PRUCFG       // mov the address of the PRUs CFG register into R3
+        LBBO      r0, r3, 4, 4              // use R3 to get the contents of the PRUCFG register into R0
+        CLR       r0, r0, 4                 // Clear bit 4. This will enable the OCP master port
+                                            //     see the PRM page 272 section 10.1.2
+        SBBO      r0, r3, 4, 4              // write the modified contents back out
+
+        MOV r0, NUMBER_OF_BLINKS            // this is the number of times we wish to blink          
+
+        // there are three loops in this code. The outermost loop defined by the BLINK
+        // label executes once for each on/off cycle of the LED. L1 and L2 are half second
+        // delay loops
+
+BLINK:  MOV R1, 50000000                    // set up for a half second delay
+
+        // perform a half second delay
+L1:     SUB R1, R1, 1                       // subtract 1 from R1
+        QBNE L1, R1, 0                      // is R1 == 0? if no, then goto L1
+
+        // now we turn the LED3 on
+        MOV R2, GPIO1_LED3BIT               // reload R2 with the USR3 LEDs enable/disable bit
+        MOV R3, GPIO_BANK1+GPIO_SETDATAOUT  // load the address to we wish to set. Note that the
+                                            // operation GPIO_BANK1+GPIO_SETDATAOUT is performed
+                                            // by the assembler at compile time and the resulting  
+                                            // constant value is used. The addition is NOT done 
+                                            // at runtime by the PRU!
+        SBBO R2, R3, 0, 4                   // write the contents of R2 out to the memory address
+                                            // contained in R3. Use no offset from that address
+                                            // and copy all 4 bytes of R2
+
+        // send the LED ON event. The 0x20 is required because we have to set bit 5 high
+        // on the write or the interrupt will not get triggered. The 1 represents SysInt17 - the 
+        // event number we use to signal the LED ON to the user space program. We use 
+        // 0x20|01 since we can only write to bits[3-0] and 1 is the low four bits of 17
+        // Another way to think of it is that if we write a 1 here it will appear as PRU_EVENT_1
+        // in the BBBCSIO PRUDriver subsystem
+        MOV r31.b0, 0x20|1
+
+        // perform a half second delay. Note the delay works because of the determinate nature
+        // of the execution times of PRU instructions. Instructions that do not reference data
+        // RAM take 5ns. We have two instructions in our loop (the SUB and the QBNE). If you do the
+        // math on that you find that a value of 50000000 gives you a half second delay. Of course
+        // we are ignoring the time taken by all the other instructions because the small amount of
+        // time they take does not add much error. One can conceive of applications where one might
+        // have to take note of such things and compensate.
+
+        MOV R1, 50000000                    // set up for a half second delay
+L2:     SUB R1, R1, 1                       // subtract 1 from R1
+        QBNE L2, R1, 0                      // is R1 == 0? if no, then goto L2
+
+        // now we turn the LED3 off again
+        MOV R2, GPIO1_LED3BIT               // reload R2 with the USR3 LEDs enable/disable bit
+        MOV R3, GPIO_BANK1+GPIO_CLEARDATAOUT// load the address we wish to write to. Note that every
+                                            // bit that is a 1 will turn off the associated GPIO
+                                            // we do NOT write a 0 to turn it off. 0's are simply ignored.
+        SBBO R2, R3, 0, 4                   // write the contents of R2 out to the memory address
+                                            // contained in R3. Use no offset from that address
+                                            // and copy all 4 bytes of R2
+
+        // send the LED OFF event. The 0x20 is required because we have to set bit 5 high
+        // on the write or the interrupt will not get triggered. The 2 represents SysInt18 - the 
+        // event number we use to signal the LED OFF to the user space program. We use 
+        // 0x20|02 since we can only write to bits[3-0] and 2 is the low four bits of 18
+        // Another way to think of it is that if we write a 2 here it will appear as PRU_EVENT_2
+        // in the BBBCSIO PRUDriver subsystem
+        MOV r31.b0, 0x20|2
+
+        // the bottom of the BLINK loop. Note that R0 contains the number of remaining blinks. It
+        // is UP TO YOU to remember that and not use R0 for something else in the code above. There 
+        // is no safety net in assembler :-)
+        SUB R0, R0, 1
+        QBNE BLINK, R0, 0
+
+        // if we get here we have blinked the led as many times as we need to.
+        // Delay for another half a second to let any interrupts we have sent
+        // propagate down to userspace 
+        MOV R1, 50000000                    // set up for a half second delay
+L3:     SUB R1, R1, 1                       // subtract 1 from R1
+        QBNE L3, R1, 0                      // is R1 == 0? if no, then goto L3
+
+        // send the TERMINATION event. The 0x20 is required because we have to set bit 5 high
+        // on the write or the interrupt will not get triggered. The 0 represents SysInt16 - the 
+        // event number we use to signal the TERMINATION to the user space program. We use 
+        // 0x20|00 since we can only write to bits[3-0] and 0 is the low four bits of 16
+        // Another way to think of it is that if we write a 0 here it will appear as PRU_EVENT_0
+        // in the BBBCSIO PRUDriver subsystem
+        MOV r31.b0, 0x20|0
+
+        HALT                                // stop the PRU
+</pre> 
+
+<P>
+&nbsp;
+<P>
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_PRUInterruptHostExample.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_PRUInterruptHostExample.html"> Next </A> &gt;&gt;</div>
+<P>
+</body>
+</html>
+

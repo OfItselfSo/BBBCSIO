@@ -1,0 +1,108 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>The BBBCSIO Help: BBBCSIO PRU Library Code Launch Mechanism Example</title>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  <meta name="description" content="The BBBCSIO software is a C# PRU Driver Library for the Beaglebone Black" />
+  <meta name="keywords" content="Beaglebone Black C# Mono PRU Driver Library" />   
+  <link rel="stylesheet" type="text/css" href="OISHelp.css" />
+</head>
+<body>
+<center><h2>BBBCSIO</h2></center>
+<center><h1>BBBCSIO PRU Library Code Launch Mechanism Example</h1></center>
+<P> 
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_PRUDriverExamples.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_PRUDataInOutExample.html"> Next </A> &gt;&gt;</div>
+<P>
+&nbsp;
+<P>
+<A name="PRUBlinkUSR3LED Example Code"></A>
+<h2>About the BBBCSIO PRU Library Launch Mechanism</h2>
+<P>
+When one wishes to test a load and execute mechanism with the Beaglebone Black Programable Real Time Unit (PRU) typically a simple
+program implementing some sort of visible action (such as toggling an output) is used. 
+In the microcontroller world the simple &quot;Blinking LED&quot; is pretty much the equivalent of the &quot;Hello World&quot; program.
+<P>
+The USR3 LED is a good choice for such a demonstration item as it is already present on the Beaglebone Black board, it is quite visible, and is usually unused by anything else.
+Furthermore, in order to toggle an external pin high or low, the associated GPIO must be enabled in the PinMux. It so happens that, by default on most Beaglebone Black systems,
+the USR3 LED is tied to a GPIO that is usually always enabled in the PinMux. This means that you probably do not have to worry about Device Tree Overlays
+in order to configure the appropriate GPIO so the PRU can turn the USR3 LED on and off.
+<P>
+The example below discusses how to use the BBBCSIO libraries <a href="BBBCSIOHelp_PRUDriver.html">PRU_Driver</a> class to load a PRU binary (compiled PASM Assembler). The example binary being 
+loaded will blink the USR3 LED once per second for ten seconds. If you are new to the Beaglebone Black the image below illustrates the location of the onboard USR3 LED.
+<P>
+<DL><DL>
+ <DT><img src="USR3LED.jpg" alt="USR3 LED Location" height="138" width="200"> 
+</DL></DL>
+<P>
+NOTE: The code the example below will run in the PRU is called <code>PRUBlinkUSR3LED.bin</code> and the PASM Assembly Language source for this code can be found in the file
+<a href="BBBCSIOHelp_PRUBlinkUSR3LEDExamplePASMCode.html">BBBCSIOHelp_PRUBlinkUSR3LEDExamplePASMCode.html</a>. You should probably read the comments in the <code>PRUBlinkUSR3LED.p</code>
+source file in order to understand the operation of this program. 
+<P>
+<h2>Warnings - READ THIS!!!</h2>
+<P>
+The example code running in the PRU uses a GPIO value of 88 which is exposed as GPIO1_24 and has a hard wired connection to the USR3 LED. In most cases this pin will be 
+available as an output. Be aware that if you decide to use a different GPIO as an output you <b>CAN NOT</b> necessarily assume that 
+that pin is available as a GPIO on your Beaglebone Black and even if it is a GPIO you still cannot assume it is set as a GPIO output 
+(as opposed to being an input). Any one pin can be used internally for any of about half a dozen different peripherals
+(UART, SPI bus, PWM, A/D, HDMI, EMMC etc) and it is <font color="red">not a given</font> that a randomly chosen GPIO or any specific GPIO is available. 
+<P>
+So, before using other pins, you will need to ensure that the associated GPIO is configured as an output. There is no code you can call 
+in the BBBCSIO library which does this. You <font color="red">MUST configure the GPIO externally</font> prior to running your executable - 
+usually this is done by <a href="http://www.OfItselfSo.com/BeagleNotes/BeagleBoneBlack_DeviceTreeConfig_GPIO.php">editing the device tree</a>.  
+<P>
+<h2>An Example Illustrating the Launch of a Compiled Binary in a PRU using the BBBCSIO PRU_Driver class</h2>
+<P>
+The code below illustrates how to use the PRU_Driver class to launch a compiled PRU binary. Other than the launch
+there is no output.
+<pre>
+        /// +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+        /// &lt;summary&gt;
+        /// Configures a PRU and runs a compiled binary in it.
+        /// &lt;/summary&gt;
+        /// &lt;param name="pruID"&gt;The pruID&lt;/param&gt;
+        /// &lt;param name="binaryToRun"&gt;The binary file to run&lt;/param&gt;
+        /// &lt;history&gt;
+        ///    05 Jun 15  Cynic - Originally written
+        /// &lt;/history&gt;
+        public void PRUBlinkUSR3LED(PRUEnum pruID, string binaryToRun)
+        {
+            // sanity checks
+            if (pruID == PRUEnum.PRU_NONE)
+            {
+                throw new Exception("No such PRU: "+pruID.ToString());
+            }
+            if ((binaryToRun == null) || (binaryToRun.Length == 0))
+            {
+                throw new Exception("Null or zero length binary file name specified");
+            }
+            
+            // build the driver
+            PRUDriver pruDriver = new PRUDriver(pruID);
+            // run the binary
+            pruDriver.ExecutePRUProgram(binaryToRun);
+
+            // close the driver, the code in the PRU remains running
+            pruDriver.Dispose();
+        }   
+</pre> 
+<P>
+The <code>PRUBlinkUSR3LED</code> call would be made via a line which looks like:
+<pre>
+   PRUBlinkUSR3LED(PRUEnum.PRU_0, "/home/debian/CSharpCode/PASMCode/PRUBlinkUSR3LED.bin");
+</pre> 
+<P>
+&nbsp;
+<P>
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_PRUDriverExamples.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_PRUDataInOutExample.html"> Next </A> &gt;&gt;</div>
+<P>
+</body>
+</html>
+

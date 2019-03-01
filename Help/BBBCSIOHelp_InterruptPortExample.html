@@ -1,0 +1,188 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>The BBBCSIO Help: Interrupt Port Example Code</title>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  <meta name="description" content="The BBBCSIO software is a C# GPIO Interrupt/Output Library for the Beaglebone Black" />
+  <meta name="keywords" content="Beaglebone Black C# Mono GPIO Library" />   
+  <link rel="stylesheet" type="text/css" href="OISHelp.css" />
+</head>
+<body>
+<center><h2>BBBCSIO</h2></center>
+<center><h1>InterruptPort Example Code</h1></center>
+<P> 
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_Examples.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_Examples.html"> Next </A> &gt;&gt;</div>
+<P>
+&nbsp;
+<P>
+<A name="InterruptPort Example Code"></A>
+<h2>About the InterruptPort classes</h2>
+<P>
+The InterruptPortMM class is designed to send an .NET event to a subscriber when the state (high or low) of a GPIO pin on the Beaglebone Black changes. 
+The BBBCSIO library usually provides classes for both SYSFS and Memory Mapped access however the InterruptPort functionality is only available in 
+MemoryMapped mode.
+<P>
+The GPIO on which the InterruptPortMM class operates must be configured as an input in exactly the same way as if it were to be used with any of 
+the InputPort classes. 
+<P>
+<h2>Warnings - READ THIS!!!</h2>
+<P>
+The example code below uses a GPIO value of 49 which is exposed as pin 23 on the P9 header. You <b>CAN NOT</b> assume that this pin is available as a GPIO 
+on your Beaglebone Black and even if it is a GPIO you still cannot assume it is set as a GPIO input (as opposed to being an output). Any one GPIO can be used for any of about 
+half a dozen different peripherals
+(UART, SPI bus, PWM, A/D, HDMI, EMMC etc) and it is <font color="red">not a given</font> that a GPIO used in these examples or any specific GPIO is available. The GPIO's
+used in these examples may be used for other things on your Beaglebone Black.
+<P>
+Before using an InterruptPort class on a GPIO you will need to ensure that the GPIO is configured as an input. There is no code you can call 
+in the BBBCSIO library which does this. You <font color="red">MUST configure the GPIO externally</font> prior to running your executable - 
+usually this is done by <a href="http://www.OfItselfSo.com/BeagleNotes/BeagleBoneBlack_DeviceTreeConfig_GPIO.php">editing the device tree</a>.  
+<P>
+Always be aware that the armhf Linux running on the Beaglebone Black is <font color="red">not a real-time operating system</font>. This means, 
+for example, although you might set up an InterruptPort() object to watch for pin state changes it is possible some changes may be missed
+as the process is pre-emptively swapped in and out by the kernel.
+<P>
+<h2>An Example of the InterruptPort Usage</h2>
+<P>
+The code below illustrates how to use the InterruptPortMM class to monitor the state of a GPIO pin and send an event to a remote method (which can
+be in an entirely different class). The example interrupt handler simply outputs a summary of the event to the console.
+<pre>
+        /// +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+        /// &lt;summary&gt;
+        /// Creates and monitors an interrupt port.
+        /// &lt;/summary&gt;
+        /// 
+        /// NOTE: 
+        ///   This code assumes that the port associated with the gpioID has been 
+        ///   properly configured in the device tree as an input. If it is not
+        ///   then the interrupt may not work correctly. See the associated documentation
+        /// 
+        /// NOTE:
+        ///    Be aware of the BBB max input voltage and pullup/pulldown resistors. 
+        ///    Interrupt or not it the pin is still an input. Be really careful about 
+        ///    the voltage you provide here. In general it is usually a good idea to 
+        ///    run the input through some sort of buffer to cap the max input at the 
+        ///    BBB maximum.
+        /// 
+        /// &lt;param name="eventInterruptModeIn"&gt;The interrupt mode&lt;/param&gt;
+        /// &lt;param name="gpioIn"&gt;The gpio this port represents. &lt;/param&gt;
+        /// &lt;history&gt;
+        ///    28 Aug 14  Cynic - Originally written
+        /// &lt;/history&gt;
+        public void SimpleInterruptPortMM(GpioEnum gpioIn, InterruptMode eventInterruptModeIn)
+        {
+            if (gpioIn == GpioEnum.GPIO_NONE)
+            {
+                throw new Exception ("Bad interrupt port GpioEnum.GPIO_NONE");
+            }
+
+            // create an interrupt port.
+            InterruptPortMM ipPortGPIO = new InterruptPortMM(gpioIn, eventInterruptModeIn);
+            // Hook up an event handler to the OnInterrupt event 
+            // the IpPortGPIO_OnInterrupt function will receive the incoming event data
+            ipPortGPIO.OnInterrupt += new InterruptEventHandlerMM(IpPortGPIO_OnInterrupt);
+            // we will not get any data if it is not enabled
+            ipPortGPIO.EnableInterrupt();
+            // run until we get key press on the console
+            while (Console.KeyAvailable == false)
+            {
+                // sleep for a second
+                Thread.Sleep(1000);
+            }
+            // this just stops all transmissions. The interrupt can be enabled again
+            // NOTE: disabling the interrupt does not release the event resources
+            ipPortGPIO.DisableInterrupt();
+            // close the port
+            ipPortGPIO.ClosePort();
+            // usually a good idea to dispose()
+            ipPortGPIO.Dispose();
+            // we never can use this object again after it is disposed. To use it
+            // again we would have to re-create it
+            ipPortGPIO = null;
+        }
+</pre> 
+
+The above code subscribes to the InterruptPort's OnInterrupt event and any events will appear in the named
+<code>IpPortGPIO_OnInterrupt</code> handler. Example code for the <code>IpPortGPIO_OnInterrupt</code> handler is given below. You can
+route more than one InterruptPort to the same handler - however to do anything useful you will need to 
+use the information passed in during the event to figure out which event was triggered.
+<P>
+Note that the code below <font color="red">executes in a different thread</font> than the one in which the InterruptPortMM was
+created. You should not do any lengthy processing in the interrupt handler thread as no other interrupts can be processed
+until the current interrupt is cleared.
+<P>
+<pre>
+        /// +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+        /// &lt;summary&gt;
+        /// An InterruptPort interrupt event handler. This is where the data from 
+        /// the interrupt arrives. Note the EventData object contains more
+        /// detailed information than the passed in arguments - including a 
+        /// reference to the InterruptPort object which generated the event.
+        ///    
+        /// NOTE:
+        ///    Be aware that this handler method which accepts the data from 
+        ///    an InterruptPort event is executing in the InterruptPort's event 
+        ///    thread - not the main() thread. You have to be careful what you do 
+        ///    in here to avoid the many issues associated with multi-threaded 
+        ///    applications. 
+        /// 
+        /// NOTE: Be Quick. It is not advisable to take to long to process the 
+        ///    incoming event data - you cannot receive another interrupt while 
+        ///    processing the current one and the fact that a lost interrupt
+        ///    happened will not be recorded
+        ///
+        /// &lt;/summary&gt;
+        /// &lt;param name="evGpio"&gt;The gpio the event is configured on&lt;/param&gt;
+        /// &lt;param name="evState"&gt;The event state (1 or 0)&lt;/param&gt;
+        /// &lt;param name="evTime"&gt;The event time&lt;/param&gt;
+        /// &lt;param name="evData"&gt;The event data structure&lt;/param&gt;
+        /// &lt;history&gt;
+        ///    28 Aug 14  Cynic - Originally written
+        /// &lt;/history&gt;
+        public void IpPortGPIO_OnInterrupt(GpioEnum evGpio, bool evState, DateTime evTime, EventData evData)
+        {
+            // here we process and take action on the incoming data
+            // in this particular example we just write it out to the 
+            // console
+            if (evData != null)
+            {
+                // this function could receive data from multiple
+                // interrupt ports. To decide what action to take we could
+                // look at the user specified evCode or the GPIO number
+                // down in the evData object. 
+
+                // just output some diagnostics
+                Console.WriteLine (evData.ToString ());
+
+                // if we have to call ClearInterrupt() on the port 
+                // we can do it this way
+                if (evData.PortObject != null)
+                {
+                    evData.PortObject.ClearInterrupt();
+                }
+            }
+        }
+</pre> 
+
+In the <code>SimpleInterruptPortMM</code> call, the <code>gpioID</code> and <code>eventInterruptModeIn</code> are passed in when the function was called. 
+These values are members of the 
+<code><a href="BBBCSIOHelp_GPIOEnum.html">GpioEnum</a></code> and <code><a href="BBBCSIOHelp_InterruptMode.html">InterruptMode</a></code> enumerations.
+The called would be made via a line which looks like:
+<pre>
+SimpleInterruptPortMM(GpioEnum.GPIO_49, InterruptMode.InterruptEdgeBoth);
+</pre> 
+<P>
+&nbsp;
+<P>
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_Examples.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_Examples.html"> Next </A> &gt;&gt;</div>
+<P>
+</body>
+</html>
+

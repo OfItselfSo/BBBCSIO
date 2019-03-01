@@ -1,0 +1,9 @@
+BBBCSIO Software Known Bugs and ToDo List
+
+Outstanding ToDo Tasks and Bugs As of Version 01.05
+
+    Add support for the Quadrature Encoder OCP peripherals.
+    Add support for the McASP system.
+        
+
+

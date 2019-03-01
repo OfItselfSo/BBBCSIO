@@ -1,0 +1,42 @@
+BBBCSIO Software Version Change Log
+
+Version 01.00 - 05 Dec. 2014 
+    First Release 
+
+Version 01.01 - 14 Jan. 2015 
+    - SPI Port functionality has now been added.
+
+Version 01.02 - 06 Mar. 2015 
+    - I2C Port functionality has now been added.
+    - A Bug in the WriteGPIOPin method which hard coded writes to GPIO bank1 
+       has now been fixed. Thank you D.S.
+    - A document entitled "About the Device Tree" which provides background
+       information on the Beaglebone Black Device Tree and its relationship
+       to the OCP devices and PinMux is now available on the OfItselfSo.com
+       website.
+
+Version 01.03 - 19 Aug. 2015 
+    - Full PRU functionality has now been added.
+    - Documents explaining the Beaglebone Black PinMux modes and a 
+       note discussing how the configure I/O lines so the PRUs can
+       use them have been added to the BeagleNotes section of the 
+       OfItselfSo.com website.
+    - Quick Reference Guides (in pdf format) to the Beaglebone Black 
+       PinMux modes and also guides to the P8 and P9 header pins 
+       visible to the PRUs have been added to the BeagleNotes section 
+       of the OfItselfSo.com website.
+
+Version 01.04 - 24 Aug. 2015 
+    - A2D Port functionality has now been added.
+    - PWM Port functionality has now been added.
+	
+Version 01.05 - 14 Sep. 2015 
+    - Serial Port/UART functionality has now been added.
+	   
+Version 01.06 - 02 Dec. 2015 
+    - Removed the PWMPortFS class due to problems consistently configuring a device tree for it.
+    - Added a PWMPortMM class to provide much more stable PWM device support.
+	
+Version 01.07- 01 Mar. 2019
+    Placed up on GitHub
+   

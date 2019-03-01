@@ -1,0 +1,151 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>The BBBCSIO Help: The GpioEnum Enum</title>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  <meta name="description" content="The BBBCSIO software is a C# GPIO Input/Output Library for the Beaglebone Black" />
+  <meta name="keywords" content="Beaglebone Black C# Mono GPIO Library" />   
+  <link rel="stylesheet" type="text/css" href="OISHelp.css" />
+</head>
+<body>
+<center><h2>BBBCSIO</h2></center>
+<center><h1>The GpioEnum Enum</h1></center>
+<P> 
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_GpioConfig.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_ClassDocs.html">BBBCSIO Classes</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_InputPortFS.html"> Next </A> &gt;&gt;</div>
+<P>
+&nbsp;
+<P>
+<A name="GpioEnum Enum"></A>
+<h2>The GpioEnum Enum</h2>
+<P>
+The GpioEnum enum defines the available GPIOs on the Beaglebone Black. The source code below lists all
+possible GPIO values. There are gaps in this list because some GPIO's, although theoretically present, are not exposed on the P8 and P9 headers as pins and hence cannot be used.
+<P>
+The GPIOs are not exposed on the P8 or P9 header in any particularly logical order. You must refer to the Beaglebone Black 
+<a href="http://www.OfItselfSo.com/BeagleNotes/BeagleBoneBlack_HeaderPinouts.php">P8 or P9 header pinouts</a> in order to 
+determine on  which header and pin the GPIO appears.
+<P>
+&nbsp;
+<P>
+<h3>Warnings - READ THIS!!!</h3>
+<P>
+The source code below lists all possible GPIO values. You <b>CAN NOT</b> assume that, by default, any particular GPIO is available for use 
+on your Beaglebone Black and that it is configured correctly as an input or output. Any one GPIO can be used for over 
+half a dozen different peripherals (UART, SPI bus, PWM, A/D etc). In particular, the HDMI display and the EMMC memory use
+large swathes of the available GPIO range. Simply just picking a GPIO at random and using it could cause a great deal of
+trouble and possibly physical damage to your Beaglebone Black. 
+<P>
+Before using any <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">BBBCSIO</a> Port class on a GPIO you will need to ensure 
+that the GPIO is actually configured in the PinMux as a GPIO and also that it is
+also set appropriately as an input or output. There is no code you can call 
+in the BBBCSIO library which does this. You <font color="red">MUST configure the GPIO externally</font> prior to running your executable - 
+usually this is done by <a href="http://www.OfItselfSo.com/BeagleNotes/BeagleBoneBlack_DeviceTreeConfig_GPIO.php">editing the device tree</a>.  
+<P>
+&nbsp;
+<P>
+<h3>Source Code</h3>
+<DL>
+The source code for this class is available online for 
+<a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php#Download">download</a>
+and also in 
+<a href="http://www.ofitselfso.com/BBBCSIO/Source/GpioEnum.cs.html">browseable form</a>.
+<P>
+</DL>
+
+<P>
+&nbsp;
+<P>
+<h3>Syntax</h3>
+<DL>
+<pre>
+    public enum GpioEnum
+    {
+        GPIO_NONE,
+        GPIO_2,
+        GPIO_3,
+        GPIO_4,
+        GPIO_5,
+        GPIO_7,
+        GPIO_8,
+        GPIO_9,
+        GPIO_10,
+        GPIO_11,
+        GPIO_12,
+        GPIO_13,
+        GPIO_14,
+        GPIO_15,
+        GPIO_20,
+        GPIO_22,
+        GPIO_23,
+        GPIO_26,
+        GPIO_27,
+        GPIO_30,
+        GPIO_31,
+        GPIO_32,
+        GPIO_33,
+        GPIO_34,
+        GPIO_35,
+        GPIO_36,
+        GPIO_37,
+        GPIO_38,
+        GPIO_39,
+        GPIO_44,
+        GPIO_45,
+        GPIO_46,
+        GPIO_47,
+        GPIO_48,
+        GPIO_49,
+        GPIO_50,
+        GPIO_51,
+        GPIO_60,
+        GPIO_61,
+        GPIO_62,
+        GPIO_63,
+        GPIO_65,
+        GPIO_66,
+        GPIO_67,
+        GPIO_68,
+        GPIO_69,
+        GPIO_70,
+        GPIO_71,
+        GPIO_72,
+        GPIO_73,
+        GPIO_74,
+        GPIO_75,
+        GPIO_76,
+        GPIO_77,
+        GPIO_78,
+        GPIO_79,
+        GPIO_80,
+        GPIO_81,
+        GPIO_86,
+        GPIO_87,
+        GPIO_88,
+        GPIO_89,
+        GPIO_110,
+        GPIO_111,
+        GPIO_112,
+        GPIO_113,
+        GPIO_115,
+        GPIO_117
+    }
+</pre>
+</DL>
+<P>
+&nbsp;
+<P>
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_GpioConfig.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_ClassDocs.html">BBBCSIO Classes</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_InputPortFS.html"> Next </A> &gt;&gt;</div>
+<P>
+
+
+</body>
+</html>
+

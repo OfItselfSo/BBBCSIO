@@ -1,0 +1,241 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>The BBBCSIO Help: PWM Port Example Code</title>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  <meta name="description" content="The BBBCSIO software is a C# GPIO Input/Output Library for the Beaglebone Black" />
+  <meta name="keywords" content="Beaglebone Black C# Mono Pulse Width Modulation PWM Library" />   
+  <link rel="stylesheet" type="text/css" href="OISHelp.css" />
+</head>
+<body>
+<center><h2>BBBCSIO</h2></center>
+<center><h1>PWMPort Example Code</h1></center>
+<P> 
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_Examples.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_Examples.html"> Next </A> &gt;&gt;</div>
+<P>
+&nbsp;
+<P>
+<A name="PWMPort Example Code"></A>
+<h2>About the PWMPort Class</h2>
+<P>
+The PWMPort class controls one of the six Pulse Width Modulation On Chip Peripheral (OCP) outputs integrated into the Beaglebone Black CPU. 
+In the Linux operating system there are two ways of accessing the PWM devices. The first, file system access using device drivers, is the 
+standard and approved Linux technique. If the existence of a PWM port is detected during boot time, the PWM device driver interface will be exposed as files in the <code>/sys/class/pwm/export/</code> directory of the Beaglebone Black file system. The PWM ports will only be detected if that port is appropriately configured in the Device Tree.
+<P>
+The second type of access is called Memory Mapped access and this treats the Beaglebone Black's RAM memory as if it were a file. The PWM port is manipulated as if
+it were a bit at an offset in a virtual file. 
+<P>
+Previous versions of the BBBCSIO library provided a class which utilized file system access to the PWM port - however access to those devices was problematic to configure in the device tree and it was removed as of version 01.06. Until that issue is resolved, the memory mapped class named <a href="BBBCSIOHelp_PWMPortMM.html">PWMPortMM</a> is the only one available.
+<P>
+There are twelve possible pins on the Beaglebone Black P8 and P9 headers which could, theoretically, output PWM signals. However, there are complications.
+Some of the pins are connected to the same PWM output and will only ever output the same signal. Also, some of the PWM outputs use the same base PWM OCP Device and, although they can output signals with independent duty cycles, the frequency of each module must be the same.
+<P>
+A listing of all PWM Devices and their P8/P9 Headers is given below
+<P>
+<pre>
+              PWM Name         H8/H9 Pins          PWMDevice_Output
+               PWM0_A,        PWM_P9_22_or_P9_31     (EHRPWM0_A)
+               PWM0_B,        PWM_P9_21_or_P9_29     (EHRPWM0_B)    
+                            
+               PWM1_A,        PWM_P9_14_or_P8_36     (EHRPWM1_A)
+               PWM1_B,        PWM_P9_16_or_P8_34     (EHRPWM1_B)
+            
+               PWM2_A,        PWM_P8_19_or_P8_45     (EHRPWM2_A)
+               PWM2_B,        PWM_P8_13_or_P8_46     (EHRPWM2_B)
+</pre>
+<P>
+See the comments in the example code below for an explanation of the meaning of the above table.
+<P>
+<h2>Warnings - READ THIS!!!</h2>
+<P>
+The header pin used in the examples below is P9_14. This means the PWM port <code>PWMPortEnum.PWM1_A</code> is used. This, according to the table above,
+is connected to the <code>EHRPWM1A</code> OCP PWM device. The PinMux state for P9_14 (although P8_36 could also be used) must be configured in 
+the Device Tree in order for it to be available for use. Be aware that if you also create another <a href="BBBCSIOHelp_PWMPortMM.html">PWMPortMM</a> object on PWM1_B (pins P9_16 or P8_34) the frequency of the PWM port must be configured to be identical (they share the <code>EHRPWM1</code> PWM device) but they could have an independent duty cycle. It is up to you to make sure that the header pin you choose to use is available for use (i.e. it is not in use by some other device on the Beaglebone Black) and is appropriately configured with a Device Tree Overlay. 
+<P>
+Make sure you configure the duty cycle after you set the frequency on the port. The frequency is used to set the proper timings for the duty cycle and the duty cycle is 
+not automatically adjusted if you change the base frequency of the PWM device.
+<P>
+The <a href="http://www.ofitselfso.com/Beagle/InstallingArmhfKernelBeagleboneBlack.php">armhf Linux</a> running on the Beaglebone Black is <font color="red">not a 
+real-time operating system</font>. However, an OCP peripherals such as
+the PWM Devices have their own internal clock and so, once the frequency and duty cycle information is given to the port, that waveform will
+maintained with no interruptions. However, the act of making changes to the configuration (the duty cycle - for example) can, and will, have variable timing 
+as the process is pre-emotively swapped in and out by the kernel.
+<P>
+<A name="Example"></A>
+<h2>An Example of the PWMPort Usage</h2>
+<P>
+The code below illustrates how to use the PWMPortMM class to configure a PWM device output a variety of duty cycle waveforms. 
+<pre>
+        /// +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+        /// &lt;summary&gt;
+        /// Tests a PWM Port (and presumably a servo attached to that port)
+        /// by changing the pulse width duty cycle to 25%, 50% and 75% and
+        /// back again. Once that is done, the pulse width is changed over the
+        /// same range but much more smoothly. 
+        /// 
+        /// NOTE: 
+        ///   This code assumes that the PWM device has been configured in the 
+        ///   device tree. If it is not, then the PWM Port will probably not
+        ///   be available. I typically use a variation on the BBBIO-EHRPWM
+        ///   device tree source. This code is included with the BBBCSIO library
+        ///   in the file
+        ///   
+        ///   BBBIO-EHRPWM-00A0.dts
+        ///   
+        ///   You should conduct the usual tests to make sure the PWM header pin
+        ///   you wish to use is available and not in use by anything else on 
+        ///   the Beaglebone Black PinMux. 
+        /// 
+        /// NOTE:
+        ///    Be aware that although there are 12 pins available for PWM output
+        ///    on the Beaglebone Black P8 and P9 headers in many cases two pins
+        ///    share the same PWM output. In addition, in many cases two PWM 
+        ///    outputs share the same PWM module. P8/P9 Header pins that 
+        ///    share the same PWM output will always have identical signals in
+        ///    frequency, pulse width and timing. They _are_ the same signal!
+        /// 
+        ///    PWM Outputs that share the same PWM OCP device MUST have the same
+        ///    frequency but can have independent pulse widths. The trigger
+        ///    timing of the start of the high part of pulse waveform is 
+        ///    simultaneous.
+        /// 
+        ///    PWM Name         H8/H9 Pins          PWMDevice_Output
+        ///    PWM0_A,        PWM_P9_22_or_P9_31     (EHRPWM0_A)
+        ///    PWM0_B,        PWM_P9_21_or_P9_29     (EHRPWM0_B)    
+        ///                 
+        ///    PWM1_A,        PWM_P9_14_or_P8_36     (EHRPWM1_A)
+        ///    PWM1_B,        PWM_P9_16_or_P8_34     (EHRPWM1_B)
+        /// 
+        ///    PWM2_A,        PWM_P8_19_or_P8_45     (EHRPWM2_A)
+        ///    PWM2_B,        PWM_P8_13_or_P8_46     (EHRPWM2_B)
+        /// 
+        ///    This is IMPORTANT so I will say it again. If you configure 
+        ///    two PWM outputs in the same device (PWM1_A, PWM1_B for example) 
+        ///    then they MUST be configured with the same frequency. 
+        /// 
+        ///    They will use the same frequency anyways and if
+        ///    you change one you change the other. Changing the frequency on the
+        ///    B output will instantly change the frequency on the A output and
+        ///    will really mess up any pulse widths/duty cycles the A output is using
+        /// 
+        ///    Always set the frequency first then the Pulse Width/duty cycle. The pulse 
+        ///    width is calculated from whatever frequency is currently set it is
+        ///    not adjusted if the frequency is later changed.
+        ///
+        /// From the above information, if you connect servos to both P9_14 and 
+        /// P8_36 you will see the servos behave identically. If you connect
+        /// servos to P9_14 and P9_16 the frequency must be identical (because
+        /// the are both on PWM module EHRPWM1 but the pulse widths can be
+        /// independently controlled. If you connect servos to P9_22 and
+        /// P9_14 you can have distinct frequencies and pulse widths because
+        /// the two PWM devices are fully independent.
+        /// 
+        /// &lt;/summary&gt;
+        /// &lt;param name="pwmID"&gt;The pwmID&lt;/param&gt;
+        /// &lt;history&gt;
+        ///    21 Nov 15  Cynic - Originally written
+        /// &lt;/history&gt;
+        public void SimpleTestPWM_MM(PWMPortEnum pwmID)
+        {
+            const uint DEFAULT_PERIOD_NS = 250000;
+            const uint DEFAULT_DUTY_50PERCENT = (uint)(DEFAULT_PERIOD_NS*(0.5));
+            const uint DEFAULT_DUTY_75PERCENT = (uint)(DEFAULT_PERIOD_NS*(0.75));
+            const uint DEFAULT_DUTY_25PERCENT = (uint)(DEFAULT_PERIOD_NS*(0.25));
+
+            // open the port
+            PWMPortMM pwmPort = new PWMPortMM(pwmID);
+
+            // set the PWM waveform period
+            pwmPort.PeriodNS = DEFAULT_PERIOD_NS;
+            // we could also use FrequencyHz which does the same thing
+            // pwmPort.FrequencyHz = 4000;
+
+            // set the PWM waveform Duty Cycle
+            pwmPort.DutyNS = DEFAULT_DUTY_50PERCENT;
+            // we could also use DutyPercent which does the same thing
+            // pwmPort.DutyPercent = 50;
+
+            // set the run state to begin the output of the PWM waveform
+            pwmPort.RunState = true;
+
+            Console.WriteLine("PeriodNS is: " + pwmPort.PeriodNS.ToString());
+            Console.WriteLine("DutyNS is: " + pwmPort.DutyNS.ToString());
+            Console.WriteLine("FrequencyHz is: " + pwmPort.FrequencyHz.ToString());
+            Console.WriteLine("DutyPercent is: " + pwmPort.DutyPercent.ToString());
+            Console.WriteLine("RunState is: " + pwmPort.RunState.ToString());
+
+            // change the PWM duty cycle (i.e. rotate the servo)
+            // until we get a key press on the console
+            while (true)
+            {
+                // first we rotate the servo in steps
+                Console.WriteLine("");
+                Console.WriteLine("Now Step Rotating Servo");
+
+                // set the Duty Cycle low 
+                pwmPort.DutyNS = DEFAULT_DUTY_25PERCENT;
+                if (Console.KeyAvailable == true) break;
+                Console.WriteLine("DutyPercent is: " + pwmPort.DutyPercent.ToString());
+                Thread.Sleep(3000);
+                // set the Duty Cycle midway
+                pwmPort.DutyNS = DEFAULT_DUTY_50PERCENT;
+                if (Console.KeyAvailable == true) break;
+                Console.WriteLine("DutyPercent is: " + pwmPort.DutyPercent.ToString());
+                Thread.Sleep(3000);
+                // set the Duty Cycle high
+                pwmPort.DutyNS = DEFAULT_DUTY_75PERCENT;
+                if (Console.KeyAvailable == true) break;
+                Console.WriteLine("DutyPercent is: " + pwmPort.DutyPercent.ToString());
+                Thread.Sleep(3000);
+                // set the Duty Cycle midway
+                pwmPort.DutyNS = DEFAULT_DUTY_50PERCENT;
+                if (Console.KeyAvailable == true) break;
+                Console.WriteLine("DutyPercent is: " + pwmPort.DutyPercent.ToString());
+                Thread.Sleep(3000);
+
+                Console.WriteLine("");
+                Console.WriteLine("Now Smoothly Rotating Servo");
+
+                // now we rotate the servo smoothly from
+                // 25.123% to 75.456% using a totally arbitrary increment
+                for (float i = 25.123f; i &lt; 75.345f; i=i+0.678f)
+                {
+                    pwmPort.DutyPercent = i;
+                    if (Console.KeyAvailable == true) break;
+                    Console.WriteLine("DutyPercent is: " + pwmPort.DutyPercent.ToString());
+                    Thread.Sleep(250);
+                }
+            }
+
+            // we are done, stop running
+            pwmPort.RunState = false;
+
+            // close the port
+            pwmPort.ClosePort();
+            pwmPort.Dispose();
+        }  
+</pre> 
+In the above code, the <code>pwmID</code> is passed in when the function was called. This value is a member of the 
+<code><a href="BBBCSIOHelp_PWMPortEnum.html">PWMPortEnum class</a></code> which lists all possible PWM ports which
+can be present on the Beaglebone Black. The above code is called via a line which looks like:
+<pre>
+SimpleTestPWM(PWMPortEnum.PWM1_A);
+</pre> 
+<P>
+&nbsp;
+<P>
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_Examples.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_Examples.html"> Next </A> &gt;&gt;</div>
+<P>
+
+
+</body>
+</html>
+

@@ -1,0 +1,604 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>The BBBCSIO Help: The PRUDriver Class</title>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  <meta name="description" content="The BBBCSIO software is a C# PRU Driver Library for the Beaglebone Black" />
+  <meta name="keywords" content="Beaglebone Black C# Mono PRU Library" />   
+  <link rel="stylesheet" type="text/css" href="OISHelp.css" />
+</head>
+<body>
+<center><h2>BBBCSIO</h2></center>
+<center><h1>The PRUDriver Class</h1></center>
+<P> 
+<div class="navbar">&lt;&lt; Back  
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_ClassDocs.html">BBBCSIO Classes</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_PRUEnum.html"> Next </A>&gt;&gt;</div>
+<P>
+&nbsp;
+<P>
+<A name="PRUDriver Class"></A>
+<h2>The PRUDriver Class</h2>
+<P>
+Provides the functionality to interact with a PRU on the Beaglebone Black.
+<P>
+&nbsp;
+<P>
+<h3>Source Code</h3>
+<DL>
+The source code for this class is available online for 
+<a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php#Download">download</a>
+and also in 
+<a href="http://www.ofitselfso.com/BBBCSIO/Source/PRUDriver.cs.html">browseable form</a>.
+<P>
+</DL>
+
+<P>
+&nbsp;
+<P>
+<h3>Example Code</h3>
+<DL>
+Sample code which demonstrates the use of this class can be found on the 
+<a href="BBBCSIOHelp_PRUBlinkUSR3LEDExample.html">PRU Blink USR3 LED</a>,
+<a href="BBBCSIOHelp_PRUDataInOutExample.html">PRU Data In Out</a>,
+<a href="BBBCSIOHelp_PRUPinInOutExample.html">PRU Pin Input and Output</a> and 
+<a href="BBBCSIOHelp_PRUInterruptHostExample.html">PRU Interrupts Host</a> example pages.
+</DL>
+
+<P>
+&nbsp;
+<P>
+<h3>Syntax</h3>
+<DL>
+<code>public class PRUDriver</code>
+<P>
+<DL> Provides the functionality to interact with a PRU on the Beaglebone Black.</DL>
+<P>
+</DL>
+
+<P>
+&nbsp;
+<P>
+<h3>Public Constructors</h3>
+<P>
+<code>public PRUDriver (PRUEnum pruIDIn)</code>
+<P>
+<DL>Constructor.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>pruIDIn - The pru we interact with.
+</DL>
+<P>
+&nbsp;
+
+<P>
+</DL>
+<h3>Public Methods</h3>
+<DL>
+<code>public void ClearEvent(PRUEventEnum pruEventIn)</code>
+<P>
+<DL>Clears the specified event - this should be called after every event (synchronous or asynchronous) and must be done or the event cannot be re-triggered.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>pruEventIn - the host event we clear.
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public void CloseAllEvents()</code>
+<P>
+<DL>Closes all events.</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public void CloseEvent(PRUEventEnum pruEventIn)</code>
+<P>
+<DL>Closes an event.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>pruEventIn - the host event we close.
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<P>
+<DL>
+<code>public void Dispose()</code>
+<P>
+<DL>Implements IDisposable. Should be called after the class is closed to release resources.</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public void EnablePRUHostEvent(PRUEventEnum pruEventIn)</code>
+<P>
+<DL>Enables a PRU System Event at the Host level. Our standard mapping has ensured 
+that PRU systemInterrupts 16-23 are mapped to host Interrupts 2-9 and all
+we need to do is enable that if we want to use the functionality.
+<P>
+NOTE: host interrupts 0 and 1 are left by the UIO subsystem for signalling between
+the two PRUs because the functionality to support this is hard coded into 
+the PRU INTC system. Host Interrupts 2 to 9 appear in userspace via the 
+uio device files /dev/uio0 to /dev/uio7. 
+<P>
+This means that if you trigger PRU systemInterrupt16 you will see it appear
+on /dev/uio0. Similarly triggering PRU systemInterrupt17 will cause it to
+appear on /dev/uio1 The UIO file number which receives the event 
+is always the low four bits of the system interrupt. The only reason this 
+works like that is because the standard setup routes sysInt16 through channel2 
+through host2 and host2 is tied to uio0 by the UIO subsystem.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>pruEventIn - the host event. This must have been opened with a call to OpenPRUEvent
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public void ExecutePRUProgram(string binaryToRun)</code>
+<P>
+<DL>Loads a compiled binary into a PRU and runs it.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>binaryToRun - The binary file to run. Cannot be NULL.
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code> public void ExecutePRUProgram(string binaryToRun, byte[] dataBytes)</code>
+<P>
+<DL>Loads a compiled binary into a PRU and runs it.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>binaryToRun - The binary file to run. Cannot be NULL.
+<DD>dataBytes - The databyes to load into the PRU dataRAM. The
+offset is assumed to be 0. This is intended for data which should be
+in place and which the PRU should find when it starts. Can be NULL
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<P>
+<DL>
+<code>public void InitInterruptsForAllPRUs()</code>
+<P>
+<DL>Resets and initializes the interrupts and events for all PRU's (PRU0 and PRU1).
+ 
+ The PRU's share a interrupt controller subsystem so calling this 
+ function once is sufficient for both PRUs.
+ 
+ Note: if you set up events for one PRU then call this to init
+       the events for the other PRU you will clear the event
+       configuration for the first PRU. Call this function 
+       once!</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public void PRUEventMonitorOff(PRUEventEnum pruEventIn)</code>
+<P>
+<DL>Stop monitoring a PRU event.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>pruEventIn - the host event we stop monitoring.
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public void PRUEventMonitorOn(PRUEventEnum pruEventIn, PRUInterruptEventHandlerUIO pruEventHander)</code>
+<P>
+<DL>Begins Monitoring a PRU event. This allows us to process asynchronous
+event actions. The pruEventHander will get the event information when
+the event is triggered.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>pruEventIn - the host event we begin monitoring.
+<DD>pruEventHander - the event data handler. Cannot be NULL.
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<P>
+<DL>
+<code>public void PRUStop()</code>
+<P>
+<DL>Stop the PRU.</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public byte ReadPRUDataByte(uint offset)</code>
+<P>
+<DL>Reads a byte from the PRU data memory.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>offset - The offset into the PRU DataRAM we read the databytes
+from. Note that the sizeof(byte) + offset cannot be more than the
+PRU_DRAM_SIZE
+<P>
+<DT>Returns
+<DD> a byte read from the PRU Data Ram at the offset
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public byte[] ReadPRUDataByteArray(uint offset, uint length)</code>
+<P>
+<DL>Reads a byte array from the PRU data memory</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>offset - The offset into the PRU DataRAM we read the databytes
+from. Note that the length + offset cannot be more than the
+PRU_DRAM_SIZE
+<DD>length - the number of bytes to read
+<P>
+<DT>Returns
+<DD> a byte array read from the PRU Data Ram at the offset
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public Int16 ReadPRUDataInt16(uint offset)</code>
+<P>
+<DL>Reads the PRU data memory and returns it as a Int16</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>offset - The offset into the PRU DataRAM we read the databytes
+from. Note that the sizeof(Int16) + offset cannot be more than the
+PRU_DRAM_SIZE
+<P>
+<DT>Returns
+<DD> an Int16 read from the PRU Data Ram at the offset
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public Int32 ReadPRUDataInt32(uint offset)</code>
+<P>
+<DL>Reads the PRU data memory and returns it as a Int32</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>offset - The offset into the PRU DataRAM we read the databytes
+from. Note that the sizeof(Int32) + offset cannot be more than the
+PRU_DRAM_SIZE
+<P>
+<DT>Returns
+<DD> an Int32 read from the PRU Data Ram at the offset
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public Int64 ReadPRUDataInt64(uint offset)</code>
+<P>
+<DL>Reads the PRU data memory and returns it as a Int64</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>offset - The offset into the PRU DataRAM we read the databytes
+from. Note that the sizeof(Int64) + offset cannot be more than the
+PRU_DRAM_SIZE
+<P>
+<DT>Returns
+<DD> an Int64 read from the PRU Data Ram at the offset
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public UInt16 ReadPRUDataUInt16(uint offset)</code>
+<P>
+<DL>Reads the PRU data memory and returns it as a UInt16</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>offset - The offset into the PRU DataRAM we read the databytes
+from. Note that the sizeof(UInt16) + offset cannot be more than the
+PRU_DRAM_SIZE
+<P>
+<DT>Returns
+<DD> a UInt16 read from the PRU Data Ram at the offset
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public UInt32 ReadPRUDataUInt32(uint offset)</code>
+<P>
+<DL>Reads the PRU data memory and returns it as a UInt32</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>offset - The offset into the PRU DataRAM we read the databytes
+from. Note that the sizeof(UInt32) + offset cannot be more than the
+PRU_DRAM_SIZE
+<P>
+<DT>Returns
+<DD> a UInt32 read from the PRU Data Ram at the offset
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public UInt64 ReadPRUDataUInt64(uint offset)</code>
+<P>
+<DL>Reads the PRU data memory and returns it as a UInt64</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>offset - The offset into the PRU DataRAM we read the databytes
+from. Note that the sizeof(UInt64) + offset cannot be more than the
+PRU_DRAM_SIZE
+<P>
+<DT>Returns
+<DD> a UInt64 read from the PRU Data Ram at the offset
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<P>
+<DL>
+<code>public void ResetInterruptsForAllPRUs()</code>
+<P>
+<DL>Resets the events for all PRU's (PRU0 and PRU1).
+<P>
+The PRU's share a interrupt controller subsystem so calling this 
+function resets the interrupts and events for both PRUs</DL>
+</DL>
+<P>
+&nbsp;
+
+<P>
+<DL>
+<code>public void SetupStandardHostAndChannelMappingForAllPRUs()</code>
+<P>
+<DL>The system interrupts, channels, hosts and corresponding events
+and interrupts can be configured in a near infinite number of ways.
+<P>
+In order to keep things simple a standard, documented, arrangement
+is configured and the user can then enable specific interrupts to
+perform the desired actions. This does mean that many of the PRU
+system interrupts are left unconnected. This setup is intended
+primarily to let the PRU trigger a host interrupt which will propagate
+down to user space and be visible on one of the uio* files
+<P>
+The PRU's share a interrupt controller subsystem so calling this 
+function sets the standard configuration for both PRUs
+<P>
+NOTE: a call to ResetInterruptsForAllPRUs() should be made to reset
+things before calling this function</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public UInt32 WaitForEvent(PRUEventEnum pruEventIn)</code>
+<P>
+<DL>Waits for the specified event. Will stall with a blocking read
+until the event is triggered. It also possible to set up an
+asynchronous event via the PRUEventMonitorOn/Off call and
+receive the events via a handler function while the main
+thread is doing something.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>pruEventIn - the host event we wait for
+<P>
+<DT>Returns
+<DD>the total number of events processed by the uio file (from any source) since boot up.
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public void WritePRUDataByte(byte byteVal, uint offset)</code>
+<P>
+<DL>Writes the contents of a specified byte into the PRU data memory.
+NOTE: the max size here is PRU_DRAM_SIZE</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>byteVal - The byte to write
+<DD>offset - The offset into the PRU DataRAM we write the byte
+into. Note that the sizeof(byte) + offset cannot be more than the
+PRU_DRAM_SIZE
+</DL>
+</DL>
+<P>
+&nbsp;
+
+
+<DL>
+<code>public void WritePRUDataByteArray(byte[] byteArray, uint offset)</code>
+<P>
+<DL>Writes the contents of a specified byte array into the PRU
+data memory.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>byteArray - The byte array to write
+<DD>offset - The offset into the PRU DataRAM we write the byte array
+into. Note that the byteArray.Length + offset cannot be more than the
+PRU_DRAM_SIZE
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public void WritePRUDataInt16(Int16 dataVal, uint offset)</code>
+<P>
+<DL>Writes the contents of a specified Int16 into the PRU
+data memory.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>dataVal - The Int16 to write
+<DD>offset - The offset into the PRU DataRAM we write the Int16
+into. Note that the sizeof(Int16) + offset cannot be more than the
+PRU_DRAM_SIZE
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public void WritePRUDataInt32(Int32 dataVal, uint offset)</code>
+<P>
+<DL>Writes the contents of a specified Int32 into the PRU
+data memory.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>dataVal - The Int32 to write
+<DD>offset - The offset into the PRU DataRAM we write the Int32
+into. Note that the sizeof(Int32) + offset cannot be more than the
+PRU_DRAM_SIZE
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public void WritePRUDataInt64(Int64 dataVal, uint offset)</code>
+<P>
+<DL>Writes the contents of a specified Int64 into the PRU
+data memory.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>dataVal - The Int64 to write
+<DD>offset - The offset into the PRU DataRAM we write the Int64
+into. Note that the sizeof(Int64) + offset cannot be more than the
+PRU_DRAM_SIZE
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public void WritePRUDataUInt16(UInt16 dataVal, uint offset)</code>
+<P>
+<DL>Writes the contents of a specified UInt16 into the PRU
+data memory.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>dataVal - The UInt16 to write
+<DD>offset - The offset into the PRU DataRAM we write the UInt16
+into. Note that the sizeof(UInt16) + offset cannot be more than the
+PRU_DRAM_SIZE
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public void WritePRUDataUInt32(UInt32 dataVal, uint offset)</code>
+<P>
+<DL>Writes the contents of a specified UInt32 into the PRU
+data memory.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>dataVal - The UInt32 to write
+<DD>offset - The offset into the PRU DataRAM we write the UInt32
+into. Note that the sizeof(UInt32) + offset cannot be more than the
+PRU_DRAM_SIZE
+</DL>
+</DL>
+<P>
+&nbsp;
+
+<DL>
+<code>public void WritePRUDataUInt64(UInt64 dataVal, uint offset)</code>
+<P>
+<DL>Writes the contents of a specified UInt64 into the PRU
+data memory.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>dataVal - The UInt64 to write
+<DD>offset - The offset into the PRU DataRAM we write the UInt64
+into. Note that the sizeof(UInt64) + offset cannot be more than the
+PRU_DRAM_SIZE
+</DL>
+</DL>
+<P>
+&nbsp;
+
+
+
+
+</DL>
+
+<P>
+<h3>Public Properties</h3>
+<DL>
+
+<code>public PRUEnum PRUID { get }</code>
+<P>
+<DL>Gets the ID of the PRU we are using. There is no set accessor - this value is fixed when this object is created.</DL>
+<P>
+<DL>
+<DT>value
+<DD>The PRU ID.
+</DL>
+<P>
+&nbsp;
+
+
+</DL>
+<P>
+<div class="navbar">&lt;&lt; Back  
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_ClassDocs.html">BBBCSIO Classes</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_PRUEnum.html"> Next </A>&gt;&gt;</div>
+<P>
+
+
+</body>
+</html>
+

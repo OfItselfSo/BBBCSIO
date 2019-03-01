@@ -1,0 +1,125 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>The BBBCSIO Help: Input Port Example Code</title>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  <meta name="description" content="The BBBCSIO software is a C# GPIO Input/Output Library for the Beaglebone Black" />
+  <meta name="keywords" content="Beaglebone Black C# Mono GPIO Library" />   
+  <link rel="stylesheet" type="text/css" href="OISHelp.css" />
+</head>
+<body>
+<center><h2>BBBCSIO</h2></center>
+<center><h1>InputPort Example Code</h1></center>
+<P> 
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_Examples.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_Examples.html"> Next </A> &gt;&gt;</div>
+<P>
+&nbsp;
+<P>
+<A name="InputPort Example Code"></A>
+<h2>About the InputPort classes</h2>
+<P>
+The InputPort classes are designed to read the state (high or low) of a GPIO pin on the Beaglebone Black. In the Linux operating system there are
+two ways of accessing the GPIO pins. The first, called the SYSFS method, is the standard and approved Linux technique. During SYSFS accesses
+each GPIO is exposed as a file in the filesystem and the GPIO is manipulated as if it were a file. The second method, called 
+Memory Mapped access, treats the Beaglebone Black's RAM memory as if it were a file and the GPIO state is manipulated as if
+it were a bit at an offset in a virtual file.
+<P>
+The major difference between the two techniques is that the SYSFS method is considerably slower than Memory Mapped access. For example, a maximum read 
+frequency of about 1KHz is obtainable with SYSFS whereas something in the order of 1.8MHz (yes, mega Hertz) is obtainable with the Memory Mapped 
+technique. SYSFS is the approved <I>&quot;Linux Way&quot;</I>. However, if you need the speed, Memory Mapped access is the way to go.
+<P>
+The BBBCSIO library provides classes for both SYSFS and Memory Mapped access. The classes can be differentiated by the corresponding <code>FS</code> and
+<code>MM</code> appended to their names. The <a href="BBBCSIOHelp_InputPortFS.html">InputPortFS</a> class provides SYSFS access to the GPIO 
+and the <a href="BBBCSIOHelp_InputPortMM.html">InputPortMM</a> class provides Memory Mapped access.
+<P>
+When should you use SYSFS or Memory Mapped access? Well, in testing, both seemed pretty robust and trouble free. If you need a read frequency greater than about 500Hz 
+(beware the <a href="http://en.wikipedia.org/wiki/Nyquist_frequency">Nyquist Frequency</a>) you'll
+definitely want to use the InputPortMM class - otherwise the InputPortFS class will probably suffice. Both classes are used in exactly the same way and have exactly
+identical public members.
+<P>
+<h2>Warnings - READ THIS!!!</h2>
+<P>
+The example code below uses a GPIO value of 49 which is exposed as pin 23 on the P9 header. You <b>CAN NOT</b> assume that this pin is available as a GPIO 
+on your Beaglebone Black and even if it is a GPIO you still cannot assume it is set as a GPIO input (as opposed to being an output). Any one GPIO can be used for any of about 
+half a dozen different peripherals
+(UART, SPI bus, PWM, A/D, HDMI, EMMC etc) and it is <font color="red">not a given</font> that a GPIO used in these examples or any specific GPIO is available. The GPIO's
+used in these examples may be used for other things on your Beaglebone Black.
+<P>
+Before using any InputPort class on a GPIO you will need to ensure that the GPIO is configured as an input. There is no code you can call 
+in the BBBCSIO library which does this. You <font color="red">MUST configure the GPIO externally</font> prior to running your executable - 
+usually this is done by <a href="http://www.OfItselfSo.com/BeagleNotes/BeagleBoneBlack_DeviceTreeConfig_GPIO.php">editing the device tree</a>.  
+<P>
+Always be aware that the armhf Linux running on the Beaglebone Black is <font color="red">not a real-time operating system</font>. This means, for example, although you might set up
+an InputPort() object to read at 10000 times a second, the actual timing of some of the reads may vary (and there may be lengthy gaps) 
+as the process is pre-emptively swapped in and out by the kernel.
+<P>
+<h2>An Example of the InputPort Usage</h2>
+<P>
+The code below illustrates how to use the InputPortMM class to read the state of a GPIO pin and output that state to the console. You could use the SYSFS
+version by replacing each <code><a href="BBBCSIOHelp_InputPortMM.html">InputPortMM</a></code> with 
+an <code><a href="BBBCSIOHelp_InputPortFS.html">InputPortFS</a></code></a>.
+<pre>
+        /// +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+        /// &lt;summary&gt;
+        /// Reads a GPIO port until a key is pressed and puts the value (true or false) 
+        /// out to the console. Memory mapped version
+        /// 
+        /// NOTE: 
+        ///   This code assumes that the port associated with the gpioID has been 
+        ///   properly configured in the device tree as an input. If it is not
+        ///   then the input may not work correctly. See the associated documentation
+        /// 
+        /// NOTE:
+        ///    Be aware of the BBB max input voltage and pullup/pulldown resistors. 
+        ///    Be really careful about the voltage you provide here. In general it 
+        ///    is usually a good idea to run the input through some sort of buffer
+        ///    to cap the max input at the BBB maximum.
+        /// 
+        /// &lt;/summary&gt;
+        /// &lt;param name="gpioID"&gt;The gpioID&lt;/param&gt;
+        /// &lt;history&gt;
+        ///    28 Aug 14  Cynic - Originally written
+        /// &lt;/history&gt;
+        public void SimpleReadPortMM(GpioEnum gpioID)
+        {
+            // open the port
+            InputPortMM inPort = new InputPortMM(gpioID);
+
+            // look for the input until we have a keypress on the console
+            while (Console.KeyAvailable == false)
+            {
+                bool inVal = inPort.Read();
+                Console.WriteLine ("inVal = "+inVal.ToString());
+                // sleep for a second
+                Thread.Sleep(1000);
+            }
+
+            // close the port
+            inPort.ClosePort();
+            inPort.Dispose();
+        }
+</pre> 
+In the above code, the <code>gpioID</code> is passed in when the function was called. This value is a member of the 
+<code><a href="BBBCSIOHelp_GPIOEnum.html">GpioEnum class</a></code> which lists all possible GPIO's which
+can be present on the Beaglebone Black. The above code is called via a line which looks like:
+<pre>
+SimpleReadPortMM(GpioEnum.GPIO_49);
+</pre> 
+<P>
+&nbsp;
+<P>
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_Examples.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_Examples.html"> Next </A> &gt;&gt;</div>
+<P>
+
+
+</body>
+</html>
+

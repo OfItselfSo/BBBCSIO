@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>The BBBCSIO Help: The PRUInterruptEventHandlerUIO Class</title>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  <meta name="description" content="The BBBCSIO software is a C# PRU Driver Library for the Beaglebone Black" />
+  <meta name="keywords" content="Beaglebone Black C# Mono PRU Library" />   
+  <link rel="stylesheet" type="text/css" href="OISHelp.css" />
+</head>
+<body>
+<center><h2>BBBCSIO</h2></center>
+<center><h1>The PRUInterruptEventHandlerUIO Class</h1></center>
+<P> 
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_PRUEventHandler.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_ClassDocs.html">BBBCSIO Classes</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_PRUUIODeviceEnum.html"> Next </A> &gt;&gt;</div>
+<P>
+&nbsp;
+<P>
+<A name="PRUInterruptEventHandlerUIO Delegate"></A>
+<h2>The PRUInterruptEventHandlerUIO Delegate</h2>
+<P>
+ The event handler delegate for interrupts from the PRU to the Host send via the UIO subsystem
+ to an <a href="BBBCSIOHelp_PRUEventHandler.html">PRUEventHandler</a>'s OnInterrupt event. 
+<P>
+&nbsp;
+<P>
+<h3>Source Code</h3>
+<DL>
+The source code for this class is available online for 
+<a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php#Download">download</a>
+and also in 
+<a href="http://www.ofitselfso.com/BBBCSIO/Source/PRUInterruptEventHandlerUIO.cs.html">browseable form</a>.
+<P>
+</DL>
+
+<P>
+&nbsp;
+<P>
+<h3>Syntax</h3>
+<DL>
+<pre>
+public delegate void PRUInterruptEventHandlerUIO(PRUEventEnum evPRUEvent, uint evCount, DateTime evDateTime, PRUEventHandler evPRUData);
+</pre>
+</DL>
+<P>
+&nbsp;
+<P>
+<h3>Example Code</h3>
+<DL>
+Sample code which demonstrates the use of this delegate can be found on the <a href="BBBCSIOHelp_PRUInterruptHostExample.html">PRU Interrupts Host</a> example page.
+</DL>
+<P>
+&nbsp;
+<P>
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_PRUEventHandler.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_ClassDocs.html">BBBCSIO Classes</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_PRUUIODeviceEnum.html"> Next </A> &gt;&gt;</div>
+<P>
+
+
+</body>
+</html>
+

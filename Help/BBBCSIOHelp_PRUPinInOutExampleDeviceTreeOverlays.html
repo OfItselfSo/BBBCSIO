@@ -1,0 +1,202 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>The BBBCSIO Help: Example Device Tree Overlays which Configure the PRU Input and Output Pins</title>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  <meta name="description" content="The BBBCSIO software is a C# PRU Driver Library for the Beaglebone Black" />
+  <meta name="keywords" content="Beaglebone Black C# Mono PRU Library" />   
+  <link rel="stylesheet" type="text/css" href="OISHelp.css" />
+</head>
+<body>
+<center><h2>BBBCSIO</h2></center>
+<center><h1>Example Device Tree Overlays which Configure the PRU Input and Output Pins</h1></center>
+<P> 
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_PRUPinInOutExample.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_PRUPinInOutExample.html"> Next </A> &gt;&gt;</div>
+<P>
+&nbsp;
+<P>
+<A name="PRUDataInOut"></A>
+<h2>About the Example Device Tree Overlays which Configure the PRU Input and Output Pins</h2>
+<P>
+A discussion on the <a href="BBBCSIOHelp_PRUDataInOutExample.html">PRU Data In Out</a> example
+page describes how to launch a PRU PASM Assembler binary which will access certain pins on the Beaglebone Black P8 and P9
+header for the purposes of input and output. The associated PASM Assembly Language source can be found in the file
+<a href="BBBCSIOHelp_PRUPinInOutExamplePASMCode.html">BBBCSIOHelp_PRUPinInOutExamplePASMCode.html</a> and it will manipulate
+bits in the R31 and R30 registers of PRU0 to read and set the state of pins in the Beaglebone Black P8 header. In that example,
+the register bits which are used correspond to Header 8 pin 16 (as an input) and Header 8 pin 11 (as an output). 
+<P>
+It is important to note that, while the PASM code running in the PRU can always manipulate the content of its R31 and R30 registers, if I/O channels which the bits in these 
+registers represent have not been correctly configured then no action in the PRU (either read or write) will have any meaningful
+effect. The proper mapping is set by adjusting the PinMux mode for that pin and also other 
+<a href="http://www.ofitselfso.com/BeagleNotes/UsingDeviceTreesToConfigurePRUIOPins.php#InterpretingPinMuxState" title="Interpreting The Pin Mux State">associated attributes</a>
+such as setting it as an input or output and the pullup resistors etc.
+<P>
+A useful discussion of the Beaglebone Black PinMux, and how it operates, can be found on 
+<a href="http://www.ofitselfso.com/BeagleNotes/BeagleboneBlackPinMuxModes.php" title="Beaglebone Black PinMux Modes">this page</a>.
+Information on the configuration and usage of the PRU I/O lines can be found on 
+<a href="http://www.ofitselfso.com/BeagleNotes/UsingDeviceTreesToConfigurePRUIOPins.php" title="Using Device Trees To Configure PRU I/O Pins">this page</a>. 
+If you are not familiar with the PinMux and
+the way in which the PRU's access the I/O lines available to them, then it is strongly recommended that you read both pages. The information on this 
+page and in the <a href="BBBCSIOHelp_PRUPinInOutExamplePASMCode.html">PRU Pin In/Out Example PASM Code</a> will make a lot 
+more sense.
+<P>
+In order to ensure that the specified pins on theP8 or P9 header are properly configured so the PRU can access 
+them you will need to set the PinMux mode and configuration for that pin. On the Beaglebone Black, the PinMux 
+mode for the pins can be set by adjusting the Device Tree source, recompiling and rebooting or, 
+rather more simply, by building and executing a Device Tree Overlay which does the job without the necessity of a reboot. The
+<a href="http://www.ofitselfso.com/BeagleNotes/AboutTheDeviceTree.pdf">About the Device Tree</a> document on this site discusses 
+in detail the process of de-compiling, editing, re-compiling and installing a new Device Tree and such methods will not be
+discussed further here. 
+<P>
+The information below details the two
+<a href="http://www.ofitselfso.com/BeagleNotes/UsingDeviceTreesToConfigurePRUIOPins.php">Device Tree Overlays</a> required to support the 
+<a href="BBBCSIOHelp_PRUPinInOutExamplePASMCode.html">PRU Pin In/Out Example PASM Code</a> and intentionally does not provide much in the 
+way of background. A comprehensive discussion of the motivation and content of these files can be found on 
+the <a href="http://www.ofitselfso.com/BeagleNotes/UsingDeviceTreesToConfigurePRUIOPins.php" title="Using Device Trees To Configure PRU I/O Pins">Using Device Trees To Configure PRU I/O Pins</a> page. 
+<P>
+Creating an overlay for any one PinMux pin is not very difficult - there are lots of 
+<a href="https://learn.adafruit.com/introduction-to-the-beaglebone-black-device-tree/device-tree-overlays" title="Example Device Tree Overlay">samples on the Internet</a>. 
+However, one simple method is to go to the excellent Device Tree Overlay Generator at 
+<a href="http://kilobaser.com/blog/2014-07-28-beaglebone-black-devicetreeoverlay-generator" title="Handy Device Tree Overlay Generator Utillity">KiloBaser.com</a> and
+generate the basic structure of the Device Tree Overlay there. The instructions for compiling and installing the Device Tree Overlay are also helpfully contained on that page. 
+<P>
+<A name="PRUDataP816Input"></A>
+<h2>A Device Tree Overlay to Configure Header P8 Pin 16 as an Input</h2>
+<P>
+Below is a summary of the Device Tree Overlay and actions required to enable the P8_16 pin (<code>pr1_pru0_pru_r31_14</code>) as an input. 
+<P>
+First set up the <a href="http://kilobaser.com/blog/2014-07-28-beaglebone-black-devicetreeoverlay-generator" title="Handy Device Tree Overlay Generator Utillity">form</a>
+with the following information (Pin=<i>P8_16</i>, Slew=<i>Fast</i>, Direction=<i>Input</i>, Pullup/Pulldown=<i>Pulldown</i>, MuxMode=<i>Mode6:pr1_pru0_pru_r31_14</i>). Once that is done, 
+if you look below on the form, you will see that the Device Tree Overlay is dynamically generated every time you make a change. Here is the code it generated for <i>P8_16 Mode6</i>
+<P>
+<pre>
+/*
+ * This is a template-generated file from BoneScript
+ */
+
+/dts-v1/;
+/plugin/;
+
+/{
+    compatible = "ti,beaglebone", "ti,beaglebone-black";
+    part_number = "BS_PINMODE_P8_16_0x26";
+
+    exclusive-use =
+        "P8.16",
+        "pr1_pru0_pru_r31_14";
+
+    fragment@0 {
+        target = <&am33xx_pinmux>;
+        __overlay__ {
+            bs_pinmode_P8_16_0x26: pinmux_bs_pinmode_P8_16_0x26 {
+                pinctrl-single,pins = <0x038 0x26>;
+            };
+        };
+    };
+
+    fragment@1 {
+        target = <&ocp>;
+        __overlay__ {
+            bs_pinmode_P8_16_0x26_pinmux {
+                compatible = "bone-pinmux-helper";
+                status = "okay";
+                pinctrl-names = "default";
+                pinctrl-0 = <&bs_pinmode_P8_16_0x26>;
+            };
+        };
+    };
+};
+</pre>
+<P>
+A bit of copy and paste later and the file is saved . Note the line which performs the copy to the 
+<code>/lib/firmware</code> location is important
+otherwise the code which later loads the compiled <code>.dtbo</code> binary at boot time will not be able to find it. The <code>.dts</code>
+is compiled with command...
+<P>
+<pre>
+dtc -O dtb -o bspm_P8_16_26-00A0.dtbo -b 0 -@ bspm_P8_16_26-00A0.dts
+cp bspm_P8_16_26-00A0 /lib/firmware/
+</pre>
+<P>
+... and the <code>.dtbo</code> binary is installed by editing the <code>uEnv.txt</code> file. For more information on this see the <a href="http://www.ofitselfso.com/BeagleNotes/Beaglebone_Black_And_Device_Tree_Overlays.php">Beaglebone Black and Device Tree Overlays</a> 
+Technical Note.  
+<P>
+<A name="PRUDataP816Input"></A>
+<h2>A Device Tree Overlay to Configure Header P8 Pin 11 as an Output</h2>
+<P>
+Below is a summary of the Device Tree Overlay and actions required to enable the P8_11 pin (<code>pr1_pru0_pru_r30_15</code>) as an output. 
+<P>
+First set up the <a href="http://kilobaser.com/blog/2014-07-28-beaglebone-black-devicetreeoverlay-generator" title="Handy Device Tree Overlay Generator Utillity">form</a>
+with the following information (Pin=<i>P8_11</i>, Slew=<i>Fast</i>, Direction=<i>Input</i>, Pullup/Pulldown=<i>Pulldown</i>, MuxMode=<i>Mode6:pr1_pru0_pru_r30_15</i>). 
+Once that is done, 
+if you look below on the form, you will see that the Device Tree Overlay is dynamically generated every time you make a change. Here is the code it generated for <i>P8_11 Mode6</i>.
+<P>
+<pre>
+/*
+ * This is a template-generated file from BoneScript
+ */
+
+/dts-v1/;
+/plugin/;
+
+/{
+    compatible = "ti,beaglebone", "ti,beaglebone-black";
+    part_number = "BS_PINMODE_P8_11_0x6";
+
+    exclusive-use =
+        "P8.11",
+        "pr1_pru0_pru_r30_15";
+
+    fragment@0 {
+        target = <&am33xx_pinmux>;
+        __overlay__ {
+            bs_pinmode_P8_11_0x6: pinmux_bs_pinmode_P8_11_0x6 {
+                pinctrl-single,pins = <0x034 0x6>;
+            };
+        };
+    };
+
+    fragment@1 {
+        target = <&ocp>;
+        __overlay__ {
+            bs_pinmode_P8_11_0x6_pinmux {
+                compatible = "bone-pinmux-helper";
+                status = "okay";
+                pinctrl-names = "default";
+                pinctrl-0 = <&bs_pinmode_P8_11_0x6>;
+            };
+        };
+    };
+};
+</pre>
+<P>
+A bit of copy and paste later and the file is saved . Note the line which performs the copy to the 
+<code>/lib/firmware</code> location is important
+otherwise the code which later loads the compiled <code>.dtbo</code> binary at boot time will not be able to find it. The <code>.dts</code>
+is compiled with command...
+<P>
+<pre>
+dtc -O dtb -o bspm_P8_11_6-00A0.dtbo -b 0 -@ bspm_P8_11_6-00A0.dts
+cp bspm_P8_11_6-00A0.dtbo /lib/firmware/
+</pre>
+<P>
+... and the <code>.dtbo</code> binary is installed by editing the <code>uEnv.txt</code> file. For more information on this see the <a href="http://www.ofitselfso.com/BeagleNotes/Beaglebone_Black_And_Device_Tree_Overlays.php">Beaglebone Black and Device Tree Overlays</a> 
+Technical Note.  
+<P>
+
+<P>
+&nbsp;
+<P>
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_PRUPinInOutExample.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_PRUPinInOutExample.html"> Next </A> &gt;&gt;</div>
+<P>
+</body>
+</html>
+

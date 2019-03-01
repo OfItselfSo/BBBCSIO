@@ -1,0 +1,177 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>The BBBCSIO Help: The PRUEventHandler Class</title>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  <meta name="description" content="The BBBCSIO software is a C# PRU Driver Library for the Beaglebone Black" />
+  <meta name="keywords" content="Beaglebone Black C# Mono PRU Library" />   
+  <link rel="stylesheet" type="text/css" href="OISHelp.css" />
+</head>
+<body>
+<center><h2>BBBCSIO</h2></center>
+<center><h1>The PRUEventHandler Class</h1></center>
+<P> 
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_PRUEventEnum.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_ClassDocs.html">BBBCSIO Classes</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_PRUInterruptEventHandlerUIO.html"> Next </A>&gt;&gt;</div>
+<P>
+&nbsp;
+<P>
+<A name="PRUEventHandler Class"></A>
+<h2>The PRUEventHandler Class</h2>
+<P>
+Provides the storage and handling of the various items associated with a PRU Event
+<P>
+&nbsp;
+<P>
+<h3>Source Code</h3>
+<DL>
+The source code for this class is available online for 
+<a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php#Download">download</a>
+and also in 
+<a href="http://www.ofitselfso.com/BBBCSIO/Source/PRUEventHandler.cs.html">browseable form</a>.
+<P>
+</DL>
+
+<P>
+&nbsp;
+<P>
+<h3>Example Code</h3>
+<DL>
+Sample code which demonstrates the use of this class can be found on the <a href="BBBCSIOHelp_PRUInterruptHostExample.html">PRU Interrupts Host</a> example page.
+</DL>
+
+<P>
+&nbsp;
+<P>
+<h3>Syntax</h3>
+<DL>
+<code>public class PRUEventHandler</code>
+<P>
+<DL> Provides the storage and handling of the various items associated with a PRU Event.</DL>
+<P>
+</DL>
+
+<P>
+&nbsp;
+<P>
+<h3>Public Constructors</h3>
+<P>
+<code>public PRUEventHandler(PRUEventEnum pruEventIn, PRUDriver pruDriverIn)</code>
+<P>
+<DL>Constructor.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>pruEventIn - The event we represent.
+<DD>pruDriverIn - The PRUDriver object which created this event data object.
+</DL>
+<P>
+&nbsp;
+<P>
+</DL>
+<h3>Public Methods</h3>
+<DL>
+<code>public void StartPRUEventMonitor()</code>
+<P>
+<DL>Starts the interrupt event thread for a PRU event. There is one thread per interrupt event.
+<P>
+Basically what is happening here is that we are starting a separate thread which will immediately try to read the UIO file and will block on it until an event happens. Once the event happens, a user specified handler is called to process the interrupt data and clear the interrupt.</DL>
+</DL>
+<P>
+&nbsp;
+<DL>
+<code>public void StopPRUEventMonitor()</code>
+<P>
+<DL>Stops the pru event monitor thread. Since the worker thread immediately enters into a blocking read we just hard kill the thread.</DL>
+</DL>
+<P>
+&nbsp;
+<DL>
+<code>public UInt32 WaitForEvent()</code>
+<P>
+<DL>Waits for the specified event. Will stall with a blocking read until the event is triggered.</DL>
+<P>
+<DL>
+<DT>Returns
+<DD>the total number of events processed by the uio file (from any source) since boot up.
+</DL>
+</DL>
+<P>
+&nbsp;
+</DL>
+
+<P>
+<h3>Public Properties</h3>
+<DL>
+
+<code>public int EventFD { get;set }</code>
+<P>
+<DL>Gets/sets the PRU event file descriptor. THis is the file descriptor of the open UIO file.</DL>
+<P>
+<DL>
+<DT>value
+<DD>The PRU event file descriptor.
+</DL>
+<P>
+&nbsp;
+
+<code>public int InterruptEventsReceived { get;set }</code>
+<P>
+<DL>Gets/Sets the count of events received.</DL>
+<P>
+<DL>
+<DT>value
+<DD>count of events received.
+</DL>
+<P>
+&nbsp;
+
+<code>public int InterruptEventsSent { get;set }</code>
+<P>
+<DL>Gets/Sets the count of events sent.</DL>
+<P>
+<DL>
+<DT>value
+<DD>count of events sent.
+</DL>
+<P>
+&nbsp;
+
+<code>public PRUEventEnum PRUEvent { get }</code>
+<P>
+<DL>Gets the PRU event. There is no set accessor - this value is fixed when this object is created.</DL>
+<P>
+<DL>
+<DT>value
+<DD>The PRU event.
+</DL>
+<P>
+&nbsp;
+
+<code>public PRUDriver PRUEventDriver { get }</code>
+<P>
+<DL>gets the PRUDriver that created this PRU event. There is no set accessor - this value is fixed when this object is created.</DL>
+<P>
+<DL>
+<DT>value
+<DD>The PRUDriver object.
+</DL>
+<P>
+&nbsp;
+
+</DL>
+<P>
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_PRUEventEnum.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_ClassDocs.html">BBBCSIO Classes</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_PRUInterruptEventHandlerUIO.html"> Next </A>&gt;&gt;</div>
+<P>
+
+
+</body>
+</html>
+

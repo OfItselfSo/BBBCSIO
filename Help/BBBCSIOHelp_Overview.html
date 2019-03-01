@@ -1,0 +1,118 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>The BBBCSIO Help: Overview</title>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  <meta name="description" content="The BBBCSIO software is a C# GPIO Input/Output Library for the Beaglebone Black" />
+  <meta name="keywords" content="Beaglebone Black C# Mono GPIO Library" />   
+  <link rel="stylesheet" type="text/css" href="OISHelp.css" />
+</head>
+<body>
+<center><h2>BBBCSIO<BR>A C# I/O Library for the Beaglebone Black</h2></center>
+<center><h1>Overview</h1></center>
+<P> 
+<div class="navbar">&lt;&lt;  Back  
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+||  Next  &gt;&gt;</div>
+<P>
+&nbsp;
+<P>
+<A name="Overview"></A>
+<h3>About BBBCSIO</h3>
+<P>
+BBBCSIO is a free and open source .NET v4 library which provides a comprehensive C#  input/output solution for the Beaglebone Black Mono environment.
+Using BBBCSIO, you can easily read and write to the GPIO pins (and trigger interrupt events from state changes), launch and interact with PRU programs and 
+control SPI, I2C, PWM, UART and A2D devices. BBBCSIO is intended to be a comprehensive solution for I/O on the Beaglebone Black. At the current time only a few minor OCP devices <a href="http://www.ofitselfso.com/BBBCSIO/BBBCSIOKnownBugsAndToDoList.txt" title="The BBBCSIO Known Bugs and ToDo List">remain to be implemented</a>. Besides the downloadable 
+<a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php#Download" title="Download the BBBCSIO Library">DLL library</a> and 
+<a href="http://www.ofitselfso.com/BBBCSIO/Source/BBBCSIO.csproj.html" title="The Complete BBBCSIO Source Code">source code</a> 
+the BBBCSIO contains complete 
+<a href="http://www.ofitselfso.com/BBBCSIO/Help/BBBCSIOHelp_TableOfContents.html" title="The BBBCSIO Help Files">Help Files</a> 
+and 
+<a href="http://www.ofitselfso.com/BBBCSIO/Help/BBBCSIOHelp_Examples.html" title="Examples of using the BBBCSIO Library">Examples</a>
+. There is also a 
+<a href="http://www.ofitselfso.com/BeagleNotes/BeagleNotes.php" title="Notes on the Beaglebone Black">Notes</a>
+section which provides more information on numerous topics such
+as the <a href="http://www.ofitselfso.com/BeagleNotes/AboutTheDeviceTree.pdf" title="About the Device Tree">Device Tree</a> and the 
+<a href="http://www.ofitselfso.com/BeagleNotes/BeagleboneBlackPinMuxModes.php" title="About the PinMux">PinMux</a>. 
+<P>
+<font color="red">Note:</font> In order to use the BBBCSIO library, C# and Mono must be installed on the Beaglebone Black. A 
+<a href="http://www.OfItselfSo.com/Beagle/Beagle.php#InstallingMonoOnBeagleboneBlack" title="Series of web pages describing how to install C# and Mono on the Beaglebone Black">separate project</a>
+documents that installation procedure.
+<P>
+<h3>License, Cost and Disclaimer</h3>
+<P>
+The BBBCSIO software is free and open source and is released under the <a target=new href="MIT_License.html">MIT License</a>. Be sure to read the 
+license text before your use the software. Your use of the BBBCSIO software is entirely at your own risk.
+<P>
+<h3>What BBBCSIO Does</h3>
+<P>
+<ul>
+<li>Provides simple and transparent <a href="http://www.ofitselfso.com/BBBCSIO/Help/BBBCSIOHelp_InputPortExample.html" title="A BBBCSIO InputPort Example">read</a>/<a href="http://www.ofitselfso.com/BBBCSIO/Help/BBBCSIOHelp_OutputPortExample.html" title="A BBBCSIO OutputPort Example">write</a> access (including the 
+<a href="BBBCSIOHelp_InterruptPortExample.html" title="Triggering Events with the Interrupt Port Class">triggering of events</a>) 
+to the GPIO pins of a Beaglebone Black. A maximum output frequency of about 1.8MHz is possible when using a memory mapped port class and about 1.2Khz when using the SYSFS class.
+<LI>The <a href="http://www.ofitselfso.com/BBBCSIO/Help/BBBCSIOHelp_SPIPortExample.html" title="A BBBCSIO SPI Port Example">SPI</a> ports are fully supported. It is possible to use GPIO pins to provide a large number of SPI device select lines.
+<LI>The <a href="http://www.ofitselfso.com/BBBCSIO/Help/BBBCSIOHelp_I2CPortExample.html" title="A BBBCSIO I2C Port Example">I2C</a> ports are fully supported.
+<LI>The <a href="http://www.ofitselfso.com/BBBCSIO/Help/BBBCSIOHelp_SerialPortExample.html" title="A BBBCSIO Serial Port Example">Serial/UART</a> ports are fully supported.
+<LI>The <a href="http://www.ofitselfso.com/BBBCSIO/Help/BBBCSIOHelp_PWMPortExample.html" title="A BBBCSIO Pulse Width Modulation Example">Pulse Width Modulation</a> (PWM) devices are fully supported. The PWM duty
+cycle can be specified in nano-seconds or as a percentage of the base frequency.
+<LI>The <a href="http://www.ofitselfso.com/BBBCSIO/Help/BBBCSIOHelp_A2DPortExample.html" title="A BBBCSIO Analog to Digital Conversion Example">Analog to Digital</a> Conversion (A2D) devices are fully supported. A sample rate of about 1000 samples/sec has been observed.
+<LI>Full <a href="http://www.ofitselfso.com/BBBCSIO/Help/BBBCSIOHelp_PRUDriverExamples.html" title="A BBBCSIO PRU Examples">PRU support</a> is included. The BBBCSIO <a href="http://www.ofitselfso.com/BBBCSIO/Help/BBBCSIOHelp_PRUDriver.html" title="The PRU_Driver Class Examples">PRU_Driver</a>
+class can launch PRU binary code and interact with running PRU programs to 
+<a href="http://www.ofitselfso.com/BBBCSIO/Help/BBBCSIOHelp_PRUDataInOutExample.html" title="An Example of data exchange between running PRU code and a C# program.">exchange data</a>
+or <a href="http://www.ofitselfso.com/BBBCSIO/Help/BBBCSIOHelp_PRUInterruptHostExample.html" title="An example of a PRU program triggering events received by a user space C'# program.">receive interrupt events</a> 
+etc. The PRU can read from or write to I/O lines at speeds of up to 50Mhz.
+<li>Developed on armhf Debian Linux v3.08 <a href="http://beagleboard.org/latest-images" title="The Beagleboard Download Website">freely available</a> for the Beaglebone Black.
+<li>Tested with the Mono JIT compiler v3.2.8 but is probably also compatible with other versions.
+<li>The software is written in C# and a .NET project is included with the source code.
+</ul>
+<P>
+<h3>What BBBCSIO Does Not Do</h3>
+<P>
+<ul>
+<li>The armhf Debian Linux running on the Beaglebone Black is not a real-time operating system. This means, for example, although you might set a port 
+to output a 100Khz square wave the actual timing of some of the pulses may vary (and there may be gaps) as the process is pre-emptively swapped in and out by the kernel.
+If you need extremely accurate timing you can use the BBBCSIO 
+<a href="http://www.ofitselfso.com/BBBCSIO/Help/BBBCSIOHelp_PRUDriver.html" title="The BBBCSIO PRU_Driver Class">PRU_Driver</a> class to launch code which will run in the Programmable Realtime Units (PRUs) and this
+will be absolutely deterministic in terms of timing (and probably a lot faster as well).
+<li>The SPI, I2C, PWM, A2D, UART and PRU devices are supported as of version 01.05 but relatively little used OCP devices such as the quadrature encoders and McASP system have not yet been implemented in the BBBCSIO library, although they are planned to be added.
+<li>The BBBCSIO Library cannot do much in the way of I/O unless the process it is running in has root privileges. This is enforced by the Linux O/S and means 
+that any code which incorporates the BBBCSIO Library must run as root.
+<LI>The BBBCSIO Library cannot adjust the <a href="http://www.ofitselfso.com/BeagleNotes/BeagleboneBlackPinMuxModes.php" title="About the Beaglebone Black PinMux">PinMux</a> 
+in order to enable specific OCP devices or GPIO pins. This cannot be done from user space and must be done by 
+setting the Device Tree or by somehow calling a kernel mode device driver to do it for you. 
+<li>The InterruptPort functionality is a pseudo interrupt. It operates by monitoring the designated GPIOs out of band in a separate, continuously computable, 
+thread. In concept, it is not dissimilar to the C <code>Poll()</code> call.
+<li>The interrupt events sent by the PRU to a user space C# program are also not true interrupts. The PRU, of course, is completely realtime but by the time
+the interrupt filters down the C# program (where it is received as an C# event) the kernel may have swapped that process in and out of memory an arbitrary number of times. 
+</ul>
+<P>
+<h3>Download</h3>
+<P>
+The latest version of the BBBCSIO software can be found on <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php#Download">this page</a>. The source
+code is also available in <a href="http://www.ofitselfso.com/BBBCSIO/Source/BBBCSIO.csproj.html">browseable form</a>.
+<P>
+
+<h3>Installation and System Requirements</h3>
+<P>
+If you download only the <code>BBBCSIO.dll</code> (rather than the source) you can use it like any other .NET dll library. Either place the <code>BBBCSIO.dll</code> in the same directory 
+as the exe file or copy the dll into the <code>/usr/lib</code> directory where it will be available to all programs that need it. Of course, you will need to
+reference it in the .NET solution just as you would any other library.
+<P>
+If you download the source code you can include the <code>BBBCSIO.proj</code> into your .NET solution in the usual way and the software should compile.
+<P>
+As for system requirements, the BBBCSIO was tested on a Beaglebone Black rev C board with the armhf Debian Linux v3.08 operating system installed. You will also
+need <a href="http://www.ofitselfso.com/Beagle/Beagle.php" title="Installing Mono and C# on the Beaglebone Black">Mono and the MCS compiler</a> - testing occurred on Mono 3.2.8. 
+<P>
+&nbsp;
+<P>
+<div class="navbar">&lt;&lt;  Back  
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+||  Next  &gt;&gt;</div>
+<P>
+
+
+</body>
+</html>
+

@@ -1,0 +1,148 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>The BBBCSIO Help: A2D Port Example Code</title>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  <meta name="description" content="The BBBCSIO software is a C# GPIO Input/Output Library for the Beaglebone Black" />
+  <meta name="keywords" content="Beaglebone Black C# Mono Analog to Digital Library" />   
+  <link rel="stylesheet" type="text/css" href="OISHelp.css" />
+</head>
+<body>
+<center><h2>BBBCSIO</h2></center>
+<center><h1>A2DPort Example Code</h1></center>
+<P> 
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_Examples.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_Examples.html"> Next </A> &gt;&gt;</div>
+<P>
+&nbsp;
+<P>
+<A name="A2DPort Example Code"></A>
+<h2>About the A2DPort Class</h2>
+<P>
+The A2DPort class writes to and reads from the one of the seven Analog to Digital On Chip Peripheral (OCP) devices integrated into the Beaglebone Black CPU. 
+In the Linux operating system there are two ways of accessing the A2D devices. The first, called IIO, is the 
+standard and approved Linux technique. IIO is a device driver and if the existence of a A2D port is detected during boot time,
+the device driver interface will be exposed as a file in the <code>/sys/bus/iio/devices/iio:device0/</code> directory of the Beaglebone Black file system. The
+A2D ports will only be detected if that port is appropriately configured in the Device Tree. 
+<P>
+The second type of access is called Memory Mapped access and this treats the Beaglebone Black's RAM memory as if it were a file. The A2D port is manipulated as if
+it were a bit at an offset in a virtual file. The BBBCSIO library does not, at this time, provide a class which utilizes Memory Mapped access
+to the A2D port - the file system based IIO class named <a href="BBBCSIOHelp_A2DPortFS.html">A2DPortFS</a> is the only one available.
+<P>
+There are eight possible A2D ports on a Beaglebone Black however only seven are available for use. If these ports have been correctly configured in the Device Tree, 
+the IIO device driver for that port will be accessible via a file in the <code>/sys/bus/iio/devices/iio:device0/</code> directory. This file will have a name 
+in the format <code>in_voltage&lt;a2dport&gt;_raw</code> where <code>&lt;a2dport&gt</code> is
+the number of the A2D port. Thus the file <code>/sys/bus/iio/devices/iio:device0/in_voltage3_raw</code> is the interface for the IIO device driver on A2D port 3. 
+If you do not see the <code>in_voltage?_raw</code> files
+in the <code>/sys/bus/iio/devices/iio:device0</code> directory this means that the A2D device is not correctly configured in the Device Tree. 
+By the way, these files are the sort of files you
+can open and read text from (like you can do with the SYSFS GPIO subsystem) in order to see the current A2D value . A command like ... 
+<pre>
+cat /sys/bus/iio/devices/iio:device0
+</pre> 
+... will show you the state of the A2D values on each input.
+<P>
+Tests indicate that a maximum speed of about 1000 reads/sec is possible with the BBBCSIO <a href="BBBCSIOHelp_A2DPortFS.html">A2DPortFS</a> class.
+<P>
+<h2>Warnings - READ THIS!!!</h2>
+<P>
+You must NEVER put more than 1.8V on one of the A2D inputs or you will burn it out. If you are trying to measure voltages 
+out of that range then you must convert and scale the max and min of the voltages to a voltage range between 0 and 1.8V. 
+<P>
+The A2D port used in the examples below is AIN_0 - this must be configured in the Device Tree in order for it to be available for use. H
+For more information on this see the <a href="http://www.ofitselfso.com/BeagleNotes/Beaglebone_Black_And_Device_Tree_Overlays.php">Beaglebone Black and Device Tree Overlays</a> 
+Technical Note.  
+<P>
+Be aware that the max and min value you get out of the <a href="BBBCSIOHelp_A2DPortFS.html">A2DPortFS</a> class Read() call
+can be scaled by the Device Tree setting in use. The min and max is always representative of 0V and 1.8V respectively. See
+the notes in comments below for an explanation.
+<P>
+The <a href="http://www.ofitselfso.com/Beagle/InstallingArmhfKernelBeagleboneBlack.php">armhf Linux</a> running on the Beaglebone Black is <font color="red">not a 
+real-time operating system</font>. Any repeated reads will probably have timing differences as the process is pre-emptively swapped in and out by the kernel.
+If you need deterministic real time reads you can access the A2D Converters in the PRU using the BBBCSIO <a href="BBBCSIOHelp_PRUDriver.html">PRU_Driver</a> class. 
+<P>
+<A name="Example"></A>
+<h2>An Example of the A2DPort Usage</h2>
+<P>
+The code below illustrates how to use the A2DPortFS class to read from an A2D device and then write that value to the console. 
+<pre>
+        /// +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+        /// &lt;summary&gt;
+        /// Reads a A2D port until a key is pressed and puts the value 
+        /// out to the console. This uses the sysfs version of the A2DPort
+        /// 
+        /// NOTE: 
+        ///   This code assumes that the A2D device has been configured in the 
+        ///   device tree as an input. If it is not, then the value read may 
+        ///   not be meaningful.
+        /// 
+        /// NOTE:
+        ///    Be aware that the max and min value you get here can be scaled 
+        ///    by the Device Tree settings in use. The min and max is always
+        ///    representative of 0V and 1.8V respectively, but if you used the
+        ///    BB-ADC overlay then 0V-1.8V is represented by the values 0-4095. 
+        ///    If you used the cape-bone-iiooverlay
+        ///    then 0V-1.8V is represented by the values 0-1799. In other words,
+        ///    the scaling of the output is not necessarily fixed and it
+        ///    is up to you to know what voltage the output numbers represent. 
+        /// 
+        ///    OK, I'll tell you why there are two. The values 0-1799 represent
+        ///    simple millivolts. So if you see a value of 1234 you know there
+        ///    is 1.234V on the input. However the A2D inside the BBB is 12 bits
+        ///    so if you wish to achieve maximum resolution you can use the
+        ///    range 0-4095 (thus you have over double the resolution of the
+        ///    0-1799) range. A value 4095 still means 1.8V though - you just
+        ///    are measuring the voltage with a finer granularity.
+        /// 
+        ///  NOTE:
+        ///    You must NEVER EVER put more than 1.8V on one of the A2D inputs 
+        ///    or you will burn it out. If you are trying to measure voltages 
+        ///    out of that range then you must convert the max and min of the 
+        ///    voltages to a voltage between 0 and 1.8V. 
+        /// 
+        /// &lt;/summary&gt;
+        /// &lt;param name="a2dID"&gt;The a2dID&lt;/param&gt;
+        /// &lt;history&gt;
+        ///    20 Aug 15  Cynic - Originally written
+        /// &lt;/history&gt;
+        public void SimpleReadA2D(A2DPortEnum a2dID)
+        {
+            // open the port
+            A2DPortFS a2dPort = new A2DPortFS(a2dID);
+
+            // look for the input until we have a key on the console
+            while (Console.KeyAvailable == false)
+            {
+                uint inVal = a2dPort.Read();
+                Console.WriteLine ("inVal = "+inVal.ToString());
+                // sleep for a second
+                Thread.Sleep(1000);
+            }
+
+            // close the port
+            a2dPort.Dispose();
+        }  
+</pre> 
+In the above code, the <code>a2dID</code> is passed in when the function was called. This value is a member of the 
+<code><a href="BBBCSIOHelp_A2DPortEnum.html">A2DPortEnum class</a></code> which lists all possible A2D ports which
+can be present on the Beaglebone Black. The above code is called via a line which looks like:
+<pre>
+SimpleReadA2D(A2DPortEnum.AIN_0);
+</pre> 
+<P>
+&nbsp;
+<P>
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_Examples.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_Examples.html"> Next </A> &gt;&gt;</div>
+<P>
+
+
+</body>
+</html>
+

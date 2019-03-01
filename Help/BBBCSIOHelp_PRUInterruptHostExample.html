@@ -1,0 +1,245 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>The BBBCSIO Help: PRU Interrupt To Host Example Code</title>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  <meta name="description" content="The BBBCSIO software is a C# PRU Driver Library for the Beaglebone Black" />
+  <meta name="keywords" content="Beaglebone Black C# Mono PRU Library" />   
+  <link rel="stylesheet" type="text/css" href="OISHelp.css" />
+</head>
+<body>
+<center><h2>BBBCSIO</h2></center>
+<center><h1>PRU Interrupt Host Example Code</h1></center>
+<P> 
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_PRUDataInOutExample.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_PRUPinInOutExample.html"> Next </A> &gt;&gt;</div>
+<P>
+&nbsp;
+<P>
+<A name="PRU2HostExampleCode"></A>
+<h2>About the PRU Interrupt To Host Mechanism</h2>
+<P>
+The Beaglebone Black PRU's can send interrupt style events to user mode host programs. This event manifests itself by the presence of 
+4 readable data bytes on one of the <code>/dev/uio[0:7]</code> files. If the event has not been sent then any code which attempts to read
+from that file will simply block (wait) until an interrupt is sent. The number of the UIO file (0 to 7) is representative of the number of the interrupt
+which has been sent. However, the interrupt number the PRU activates and the UIO file on which the event occurs is not strictly fixed. The UIO file on which
+any particular PRU event can appear can be set via configuration options in the PRU's Interrupt controller.
+<P>
+The BBBCSIO <a href="BBBCSIOHelp_PRUDriver.html">PRU_Driver</a> class is designed to be able to transmit such PRU Interrupts to a C# program via a 
+.NET event to which that program is a subscriber. In order to present a consistent interface, the PRU_Driver has a <i>&quot;Standard&quot;</i> mapping of PRU
+interrupts to UIO file output. This mapping is completely arbitrary (and, it must be said, probably unique to the BBBCSIO library) but has been structured
+to provide a certain logical operation. 
+<P>
+The PRU_Driver class <a href="http://www.ofitselfso.com/BBBCSIO/Source/PRUDriver.cs.html">source code</A>
+contains numerous lengthy comments regarding the <i>&quot;Standard&quot;</i> mapping, but the general idea
+ is that if you write a 0 to bits [0-3] of Register 31 (R31) in the PRU you will get an event out on the
+file <code>/dev/uio0</code> and this corresponds to the <code>PRUEventEnum.PRU_EVENT_0</code>. If you write a value of 1 to R31 bits [0-3] you get an event out on the
+file <code>/dev/uio1</code> and this corresponds to the <code>PRUEventEnum.PRU_EVENT_1</code>. Thus, there is a simple mapping, a 6 in the PRU is <code>PRU_EVENT_6</code> in the BBBCSIO 
+PRU_Driver code - and so on. 
+<P>
+Of course you still have to trap the PRU events in your C# program and this can be done synchronously (the program blocks until the event happens) and
+asynchronously (the program does other things and the interrupt appears as a C# event). The example code below shows you how to set both of these up.
+<P>
+NOTE: Since we are interacting with the PRU we also have to run code on the PRU and this code is necessarily specific to the example. The PRU PASM assembly language code for the example 
+below can be found in the file <a href="BBBCSIOHelp_PRUInterruptHostExamplePASMCode.html">BBBCSIOHelp_PRUInterruptHostExamplePASMCode.html</a> 
+<P>
+<h2>Warnings - READ THIS!!!</h2>
+<P>
+Always be aware that the armhf Linux running on the Beaglebone Black is <font color="red">not a real-time operating system</font>. This means, 
+for example, that although the PRU's are real time by the time the event gets down to the user space program for processing 
+the process may have been pre-emptively swapped in and out many times by the kernel. The timing of the interrupt events you will receive
+in the C# code is absolutely not real time or deterministic. 
+<P>
+<h2>An Example of the how a Host C# program can trap PRU Interrupt Events</h2>
+<P>
+The code below illustrates how to use the functions in the PRU_Driver class to launch a <a href="BBBCSIOHelp_PRUInterruptHostExamplePASMCode.html">PRU program</A> and interact with the 
+events it sends. The comments in the example describe the operation of the code. Note that two of the events
+will trigger the <a href="#PRUEvent_OnInterrupt">PRUEvent_OnInterrupt</A> event handler the example code for which is located at the bottom of this page.
+<pre>
+        /// +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+        /// &lt;summary&gt;
+        /// A sample which illustrates the transmission of events from the PRU 
+        /// to a user space C# program. 
+        /// 
+        /// In this example, the ASM binary to load is hard coded. It is designed
+        /// to blink the User3 LED 10 times. Each time the LED goes on PRU_EVENT_1
+        /// is generated, when the LED goes off PRU_EVENT_2 is generated. The
+        /// termination of the PRU program is signaled by PRU_EVENT_0
+        /// 
+        /// The two LED ON/OFF events are handled asynchronously and the events
+        /// will appear as calls to the PRUEvent_OnInterrupt. This code will
+        /// NOT be running in the same thread as the code below.
+        /// 
+        /// Ultimately you will see the User3 LED blink and each time it turns on
+        /// an 'X' will be written to the Console and a 'O' each time it turns off.
+        /// The user space program will process all of these events while waiting
+        /// for the main PRU termination signal.
+        /// 
+        /// &lt;/summary&gt;
+        /// &lt;param name="pruID"&gt;The pruID&lt;/param&gt;
+        /// &lt;param name="binaryToRun"&gt;The binary file to run&lt;/param&gt;
+        /// &lt;history&gt;
+        ///    05 Jun 15  Cynic - Originally written
+        /// &lt;/history&gt;
+        public void PRUInterruptHost(PRUEnum pruID)
+        {
+            // sanity checks
+            if (pruID == PRUEnum.PRU_NONE)
+            {
+                throw new Exception("No such PRU: "+pruID.ToString());
+            }
+            string binaryToRun = "/home/debian/CSharpCode/PASMCode/PRUInterruptHost.bin";
+
+            // build the driver
+            PRUDriver pruDriver = new PRUDriver(pruID);
+
+            // initialize the PRU interrupt subsystem. The two PRUs
+            // share this so, if both PRUs are in use, we only call this
+            // ONCE - before any and all other PRU Event configuration.
+            pruDriver.InitInterruptsForAllPRUs();
+
+            // setup an event to monitor the PRU termination
+            pruDriver.EnablePRUHostEvent(PRUEventEnum.PRU_EVENT_0);
+            // setup an event to monitor the LED being turned on
+            pruDriver.EnablePRUHostEvent(PRUEventEnum.PRU_EVENT_1);
+            // setup an event to monitor the LED being turned off
+            pruDriver.EnablePRUHostEvent(PRUEventEnum.PRU_EVENT_2);
+
+            // turn the LED ON event on. The PRUEvent_OnInterrupt function 
+            // will receive the incoming event data and handle it
+            pruDriver.PRUEventMonitorOn(PRUEventEnum.PRU_EVENT_1, new PRUInterruptEventHandlerUIO(PRUEvent_OnInterrupt));
+        
+            // turn the LED OFF event on. The same PRUEvent_OnInterrupt function 
+            // will receive the incoming event data. We use the same one because the
+            // PRUEvent_OnInterrupt function can figure out what event it is handling
+            // from the information it receives when it is called
+            pruDriver.PRUEventMonitorOn(PRUEventEnum.PRU_EVENT_2, new PRUInterruptEventHandlerUIO(PRUEvent_OnInterrupt));
+      
+            // NOTE: we do not monitor for the PRU TERMINATION event via
+            // an event handler (although we could). We simply call 
+            // WaitForEvent below to stall with a blocking read until
+            // the PRU Sends us the signal.
+
+            // run the binary
+            pruDriver.ExecutePRUProgram(binaryToRun);
+
+            // the PRU binary will send an event0 signal when it terminates.
+            // While we are waiting for the termination we will be getting
+            // event interrupts on our PRUEvent_OnInterrupt handler which
+            // indicate actions the PRU is taking (the led is turned ON or OFF)
+            pruDriver.WaitForEvent(PRUEventEnum.PRU_EVENT_0);
+
+            // we still have to clear it 
+            pruDriver.ClearEvent(PRUEventEnum.PRU_EVENT_0);
+            Console.WriteLine(", PRU Program has terminated");
+
+            // disable the event monitoring
+            pruDriver.PRUEventMonitorOff(PRUEventEnum.PRU_EVENT_1);
+            pruDriver.PRUEventMonitorOff(PRUEventEnum.PRU_EVENT_2);
+
+            // close the driver, the code in the PRU remains running
+            pruDriver.Dispose();
+        }   
+</pre> 
+
+The <code>PRUEventMonitorOn()</code> statements in the above code subscribe to the PRU_Driver class OnInterrupt event and any events triggered 
+by the PRU will appear in the named <code>PRUEvent_OnInterrupt</code> handler. Example code for the <code>PRUEvent_OnInterrupt</code> handler is given below. You can
+route more than one PRUInterruptHost to the same handler - however to do anything useful you will need to 
+use the information passed in during the event to figure out which event was triggered.
+<P>
+Note that the code below <font color="red">executes in a different thread</font> than the one in which the PRUInterruptHost function was
+created. You should not do any lengthy processing in the interrupt handler thread as no other interrupts can be processed
+until the current interrupt is cleared.
+<P>
+<A name="PRUEvent_OnInterrupt"></A>
+<pre>
+        /// +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+        /// &lt;summary&gt;
+        /// An PRUEvent interrupt event handler. This is where the data from 
+        /// the PRU event arrives. Note the evPRUData object contains more
+        /// detailed information than is the passed in arguments. This includes
+        /// a reference to the PRUDriver object
+        ///    
+        /// NOTE:
+        ///    Be aware that this handler method which accepts the data from 
+        ///    an PRUDriver event is executing in the PRUDriver's event 
+        ///    thread - not the main() thread. You have to be careful what you do 
+        ///    in here to avoid the many issues associated with multi-threaded 
+        ///    applications. 
+        /// 
+        /// NOTE: Be Quick. It is not advisable to take to long to process the 
+        ///    incoming event data - you cannot receive another interrupt while 
+        ///    processing the current one. The fact that a lost interrupt
+        ///    happened can only be detected by noting gaps in the evCount
+        /// 
+        /// NOTE: You MUST clear the event in here or you will never get another
+        /// 
+        /// NOTE: this is NOT deterministic. You CANNOT trust the timing here
+        ///       as this process may have been swapped in and out any number 
+        ///       of times by the Kernel in an arbitrary manner before this
+        ///       function is called.
+        ///
+        /// &lt;/summary&gt;
+        /// &lt;param name="evPRUEvent"&gt;The PRU Event the event is configured on&lt;/param&gt;
+        /// &lt;param name="evCount"&gt;The count of event&lt;/param&gt;
+        /// &lt;param name="evDateTime"&gt;The date time of the event&lt;/param&gt;
+        /// &lt;param name="evPRUData"&gt;The PRUEventHandler data structure&lt;/param&gt;
+        /// &lt;history&gt;
+        ///    05 Jun 15  Cynic - Originally written
+        /// &lt;/history&gt;
+        public void PRUEvent_OnInterrupt(PRUEventEnum evPRUEvent, uint evCount, DateTime evDateTime, PRUEventHandler evPRUData)
+        {
+            // here we process and take action on the incoming data
+            // in this particular example we just write it out to the 
+            // console
+            if (evPRUData != null)
+            {
+                // this function could receive data from multiple
+                // PRU interrupt events. To decide what action to take we could
+                // look at the evPRUEvent or other information in the 
+                // evPRUData object. 
+
+                // just output something appropriate to the event we
+                // are handling
+                if (evPRUEvent == PRUEventEnum.PRU_EVENT_1)
+                {
+                    // the LED just got turned ON
+                    Console.Write("X");
+                }
+                else if (evPRUEvent == PRUEventEnum.PRU_EVENT_2)
+                {
+                    // the LED just got turned OFF
+                    Console.Write("O");
+                }
+
+                // we MUST call ClearEvent on the event
+                if (evPRUData.PRUEventDriver != null)
+                {
+                    evPRUData.PRUEventDriver.ClearEvent(evPRUEvent);
+                }
+            }
+        }
+</pre> 
+
+In the <code>PRUEvent_OnInterrupt</code> call, the <code>PRUEventEnum</code> and other useful data is passed in when the 
+event is triggered.
+<P>
+The PRUInterruptHost would be launched via a line which looks like:
+<pre>
+PRUInterruptHost(PRUEnum.PRU_0);
+</pre> 
+<P>
+&nbsp;
+<P>
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_PRUDataInOutExample.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_Examples.html">BBBCSIO Example Code</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| <A href="BBBCSIOHelp_PRUPinInOutExample.html"> Next </A> &gt;&gt;</div>
+<P>
+</body>
+</html>
+

@@ -1,0 +1,159 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>The BBBCSIO Help: The A2DPortFS Class</title>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  <meta name="description" content="The BBBCSIO software is a C# Input/Output Library for the Beaglebone Black" />
+  <meta name="keywords" content="Beaglebone Black C# Mono Analog to Digital Library" />   
+  <link rel="stylesheet" type="text/css" href="OISHelp.css" />
+</head>
+<body>
+<center><h2>BBBCSIO</h2></center>
+<center><h1>The A2DPortFS Class</h1></center>
+<P> 
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_A2DPortEnum.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_ClassDocs.html">BBBCSIO Classes</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| Next  &gt;&gt;</div>
+<P>
+&nbsp;
+<P>
+<A name="A2DPort Class"></A>
+<h2>The A2DPortFS Class</h2>
+<P>
+The A2DPort class reads from the one of the seven A2D bus On Chip Peripheral (OCP) devices integrated into the Beaglebone Black CPU via the
+IIO device driver access method. At this time there is no BBBCSIO class of similar functionality which uses the Memory Mapped access method. 
+<P>
+&nbsp;
+<P>
+<h3>Source Code</h3>
+<DL>
+The source code for this class is available online for 
+<a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php#Download">download</a>
+and also in 
+<a href="http://www.ofitselfso.com/BBBCSIO/Source/A2DPortFS.cs.html">browseable form</a>.
+<P>
+</DL>
+
+<P>
+&nbsp;
+<P>
+<h3>Example Code</h3>
+<DL>
+Example code which demonstrates the use of this class can be found on the <a href="BBBCSIOHelp_A2DPortExample.html">A2D Port Example</a> page.
+</DL>
+
+<P>
+&nbsp;
+<P>
+<h3>Syntax</h3>
+<DL>
+<code>public class A2DPortFS : PortFS</code>
+<P>
+<DL>Provides Analog to Digital (A2D) port functionality for a BeagleBone Black (SYSFS/IIO Version).</DL>
+<P>
+</DL>
+
+<P>
+&nbsp;
+<P>
+<h3>Public Constructors</h3>
+<DL>
+<P>
+<code>public A2DPortFS(A2DPortEnum a2dPortIn) : base(GpioEnum.GPIO_NONE)</code>
+<P>
+<DL>Constructor.</DL>
+<P>
+<DL>
+<DT>Parameters
+<DD>a2dPortIn - The A2D port to access.
+</DL>
+
+<P>
+&nbsp;
+<P>
+</DL>
+<h3>Public Methods</h3>
+<DL>
+<code>public override void ClosePort()</code>
+<P>
+<DL>Closes the port.</DL>
+<P>
+&nbsp;
+</DL>
+<P>
+<DL>
+<code>public void Dispose()</code>
+<P>
+<DL>Implements IDisposable. Should be called after the class is closed to release resources.</DL>
+<P>
+&nbsp;
+<P>
+<code>public override PortDirectionEnum PortDirection()</code>
+<P>
+<DL>Gets the PortDirection</DL>
+<P>
+<DL>
+<DT>Returns
+<DD>A <i>PortDirectionEnum</i> value. This value is always <i>PortDirectionEnum.PORTDIR_INPUT</i>.
+</DL>
+<P>
+&nbsp;
+<P>
+<code>public uint Read()</code>
+<P>
+<DL>Reads the current value in from an A2D Device.
+<P>
+Tests indicate that the maximum possible speed here is about 1000 reads/second
+<P>
+Be aware that the max and min value you get here can be scaled by the Device Tree setting in use. The min and max is always
+representative of 0V and 1.8V respectively. If you used the
+BB-ADC overlay 
+then 0V-1.8V is represented by the values 0-4095. If you used
+the cape-bone-iio overlay
+then 0V-1.8V is represented by the values 0-1799. In other words,
+the scaling of the output is not necessarily fixed and it
+is up to you to know what voltage the output numbers represent. 
+<P>
+As an additional note, in the first Device Tree Overlay (BB-ADC) the returned values 0-1799 represent
+simple millivolts. So if you see a value of 1234 you know there
+is 1.234V on the input. However the A2D inside the BBB is 12 bits
+so if you wish to achieve maximum resolution you can use the
+range 0-4095 (thus you have over double the resolution of the
+0-1799) range. A value 4095 still means 1.8V though - you just
+are measuring the voltage with a finer granularity.
+<P>
+</DL>
+<P>
+
+</DL>
+
+<P>
+&nbsp;
+<P>
+<h3>Public Properties</h3>
+<DL>
+<code>public A2DPortEnum A2DPort { get; }</code>
+<P>
+<DL>Gets the A2D Port. There is no Set accessor this is set in the constructor</DL>
+<P>
+<DL>
+<DT>value
+<DD>The working A2DPortEnum.
+</DL>
+<P>
+&nbsp;
+
+<P>
+<div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_A2DPortEnum.html"> Back </A> 
+|| <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
+|| <a href="BBBCSIOHelp_ClassDocs.html">BBBCSIO Classes</a> 
+|| <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
+|| Next  &gt;&gt;</div>
+<P>
+
+
+</body>
+</html>
+
