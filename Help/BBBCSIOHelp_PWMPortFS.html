@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-  <title>The BBBCSIO Help: The PWMPortMM Class</title>
+  <title>The BBBCSIO Help: The PWMPortFS Class</title>
   <meta http-equiv="content-type" content="text/html;charset=utf-8" />
   <meta name="description" content="The BBBCSIO software is a C# Input/Output Library for the Beaglebone Black" />
   <meta name="keywords" content="Beaglebone Black C# Mono Pulse Width Modulation PWM Library" />   
@@ -9,22 +9,26 @@
 </head>
 <body>
 <center><h2>BBBCSIO</h2></center>
-<center><h1>The PWMPortMM Class</h1></center>
+<center><h1>The PWMPortFS Class</h1></center>
 <P> 
 <div class="navbar">&lt;&lt; <A href="BBBCSIOHelp_PWMPortEnum.html"> Back </A> 
 || <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
 || <a href="BBBCSIOHelp_ClassDocs.html">BBBCSIO Classes</a> 
 || <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
-|| Next  &gt;&gt;</div>
+|| <A href="BBBCSIOHelp_PWMPortMM.html"> Next </A> &gt;&gt;</div>
 <P>
 &nbsp;
 <P>
 <A name="PWMPort Class"></A>
-<h2>The PWMPortMM Class</h2>
+<h2>The PWMPortFS Class</h2>
 <P>
-The PWMPortMM class reads from the one of the six PWM bus On Chip Peripheral (OCP) devices integrated into the Beaglebone Black CPU via the
-PWM memory Mapped access method. There is also a file system based PWM port available. For more information
-see the <a href="BBBCSIOHelp_PWMPortFS.html">PWMPortFS</a> help file.
+The PWMPortFS class reads from the one of the six PWM bus On Chip Peripheral (OCP) devices integrated into the Beaglebone Black CPU via the
+PWM File System access method. There is also a memory mapped based PWM port available. For more information
+see the <a href="BBBCSIOHelp_PWMPortMM.html">PWMPortMM</a> help file.
+<P>
+Be aware that you need to ensure the Serial port is configured in the Device Tree before this code will work. 
+For more information on this see the <a href="http://www.ofitselfso.com/BeagleNotes/Beaglebone_Black_And_Device_Tree_Overlays.php">Beaglebone Black and Device Tree Overlays</a> 
+Technical Note.  
 <P>
 &nbsp;
 <P>
@@ -33,7 +37,7 @@ see the <a href="BBBCSIOHelp_PWMPortFS.html">PWMPortFS</a> help file.
 The source code for this class is available online for 
 <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php#Download">download</a>
 and also in 
-<a href="http://www.ofitselfso.com/BBBCSIO/Source/PWMPortMM.cs.html">browseable form</a>.
+<a href="http://www.ofitselfso.com/BBBCSIO/Source/PWMPortFS.cs.html">browseable form</a>.
 <P>
 </DL>
 
@@ -50,7 +54,7 @@ Example code which demonstrates the use of this class can be found on the <a hre
 <P>
 <h3>Syntax</h3>
 <DL>
-<code>public class PWMPortMM : PortMM</code>
+<code>public class PWMPortFS : PortFS</code>
 <P>
 <DL>Provides Pulse Width Modulation (PWM) port functionality for a BeagleBone Black (Memory Mapped Version).</DL>
 <P>
@@ -62,7 +66,7 @@ Example code which demonstrates the use of this class can be found on the <a hre
 <h3>Public Constructors</h3>
 <DL>
 <P>
-<code>public PWMPortMM(PWMPortEnum pwmPortIn) : base(GpioEnum.GPIO_NONE)</code>
+<code>public PWMPortFS(PWMPortEnum pwmPortIn) : base(GpioEnum.GPIO_NONE)</code>
 <P>
 <DL>Constructor.</DL>
 <P>
@@ -190,7 +194,7 @@ be less than the PeriodNS.
 || <a href="BBBCSIOHelp_TableOfContents.html">Table of Contents</a> 
 || <a href="BBBCSIOHelp_ClassDocs.html">BBBCSIO Classes</a> 
 || <a href="http://www.OfItselfSo.com/BBBCSIO/BBBCSIO.php">Home Page</a> 
-|| Next  &gt;&gt;</div>
+|| <A href="BBBCSIOHelp_PWMPortFS.html"> Next </A> &gt;&gt;</div>
 <P>
 
 

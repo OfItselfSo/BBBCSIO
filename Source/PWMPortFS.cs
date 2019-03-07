@@ -35,9 +35,16 @@ namespace BBBCSIO
     /// 
     /// http://www.ofitselfso.com/BeagleNotes/Beaglebone_Black_And_Device_Tree_Overlays.php
     ///
+    /// Any of the entries below placed in the /boot/uEnv.txt file will enable the 
+    /// specified PWM ports. You may need to edit the .dts source if you only want A and 
+    /// not B etc.
+    /// uboot_overlay_addr4=/lib/firmware/BB-PWM0-00A0.dtbo (PWM0_A & PWM0_B)
+    /// uboot_overlay_addr5=/lib/firmware/BB-PWM1-00A0.dtbo (PWM1_A & PWM1_B)
+    /// uboot_overlay_addr6=/lib/firmware/BB-PWM2-00A0.dtbo (PWM2_A & PWM2_B)
+    /// 
     /// </summary>
     /// <history>
-    ///    20 Aug 15  Cynic - Originally written
+    ///    07 Mar 19  Cynic - Originally written
     /// </history>
     public class PWMPortFS : PortFS
     {
@@ -51,7 +58,7 @@ namespace BBBCSIO
         /// </summary>
         /// <param name="pwmPortIn">The PWM port we use</param>
         /// <history>
-        ///    20 Aug 15  Cynic - Originally written
+        ///    07 Mar 19  Cynic - Originally written
         /// </history>
         public PWMPortFS(PWMPortEnum pwmPortIn) : base(GpioEnum.GPIO_NONE)
         {
@@ -68,7 +75,7 @@ namespace BBBCSIO
         /// </summary>
         /// <value>the period (1/Freq) in nano seconds</value>
         /// <history>
-        ///    20 Aug 15 Cynic - Originally written
+        ///    07 Mar 19 Cynic - Originally written
         /// </history>
         public uint PeriodNS
         { 
@@ -77,7 +84,7 @@ namespace BBBCSIO
                 if(portIsOpen != true) throw new Exception("Port "+ PWMPort.ToString() + " is not open");
 
                 // read the contents of the file
-                string pwmFileName = BBBDefinitions.PWM_FILENAME_PERIOD.Replace("%port%", ConvertPWMPortEnumToExportNumber(PWMPort).ToString());
+                string pwmFileName = BBBDefinitions.PWM_FILENAME_PERIOD.Replace("%chipNum%", ConvertPWMPortEnumToChipNumber(PWMPort).ToString()).Replace("%deviceNum%", ConvertPWMPortEnumToDeviceNumber(PWMPort).ToString());
                 string outStr = System.IO.File.ReadAllText(pwmFileName);
 
                 // return the contents as a UINT
@@ -89,7 +96,8 @@ namespace BBBCSIO
                 if(portIsOpen != true) throw new Exception("Port "+ PWMPort.ToString() + " is not open");
 
                 // set the period
-                string pwmFileName = BBBDefinitions.PWM_FILENAME_PERIOD.Replace("%port%", ConvertPWMPortEnumToExportNumber(PWMPort).ToString());
+                string pwmFileName = BBBDefinitions.PWM_FILENAME_PERIOD.Replace("%chipNum%", ConvertPWMPortEnumToChipNumber(PWMPort).ToString()).Replace("%deviceNum%", ConvertPWMPortEnumToDeviceNumber(PWMPort).ToString());
+                Console.WriteLine("Set PeriodNS pwmFileName=: " + pwmFileName +", value="+ value.ToString());
                 System.IO.File.WriteAllText(pwmFileName, value.ToString());
             }
         }
@@ -101,7 +109,7 @@ namespace BBBCSIO
         /// </summary>
         /// <value>frequency in Hz</value>
         /// <history>
-        ///    20 Aug 15 Cynic - Originally written
+        ///    07 Mar 19 Cynic - Originally written
         /// </history>
         public uint FrequencyHz
         { 
@@ -124,7 +132,7 @@ namespace BBBCSIO
         /// </summary>
         /// <value>percentage of the input value. Must be between 0 and 100 </value>
         /// <history>
-        ///    20 Aug 15 Cynic - Originally written
+        ///    07 Mar 19 Cynic - Originally written
         /// </history>
         public double DutyPercent
         { 
@@ -150,7 +158,7 @@ namespace BBBCSIO
         /// <value>the duty cycle of the PWM output in nanoseconds. This should always
         /// be less than the PeriodNS</value>
         /// <history>
-        ///    20 Aug 15 Cynic - Originally written
+        ///    07 Mar 19 Cynic - Originally written
         /// </history>
         public uint DutyNS
         { 
@@ -159,7 +167,7 @@ namespace BBBCSIO
                 if(portIsOpen != true) throw new Exception("Port "+ PWMPort.ToString() + " is not open");
 
                 // read the contents of the file
-                string pwmFileName = BBBDefinitions.PWM_FILENAME_DUTY.Replace("%port%", ConvertPWMPortEnumToExportNumber(PWMPort).ToString());
+                string pwmFileName = BBBDefinitions.PWM_FILENAME_DUTY.Replace("%chipNum%", ConvertPWMPortEnumToChipNumber(PWMPort).ToString()).Replace("%deviceNum%", ConvertPWMPortEnumToDeviceNumber(PWMPort).ToString());
                 string outStr = System.IO.File.ReadAllText(pwmFileName);
 
                 // return the contents as a UINT
@@ -171,7 +179,7 @@ namespace BBBCSIO
                 if(portIsOpen != true) throw new Exception("Port "+ PWMPort.ToString() + " is not open");
 
                 // set the duty
-                string pwmFileName = BBBDefinitions.PWM_FILENAME_DUTY.Replace("%port%", ConvertPWMPortEnumToExportNumber(PWMPort).ToString());
+                string pwmFileName = BBBDefinitions.PWM_FILENAME_DUTY.Replace("%chipNum%", ConvertPWMPortEnumToChipNumber(PWMPort).ToString()).Replace("%deviceNum%", ConvertPWMPortEnumToDeviceNumber(PWMPort).ToString());
                 System.IO.File.WriteAllText(pwmFileName, value.ToString());
             }
         }
@@ -183,7 +191,7 @@ namespace BBBCSIO
         /// </summary>
         /// <value>true - begin running, false - stop running</value>
         /// <history>
-        ///    20 Aug 15 Cynic - Originally written
+        ///    07 Mar 19 Cynic - Originally written
         /// </history>
         public bool RunState
         { 
@@ -192,7 +200,7 @@ namespace BBBCSIO
                 if(portIsOpen != true) throw new Exception("Port "+ PWMPort.ToString() + " is not open");
 
                 // read the contents of the file
-                string pwmFileName = BBBDefinitions.PWM_FILENAME_RUN.Replace("%port%", ConvertPWMPortEnumToExportNumber(PWMPort).ToString());
+                string pwmFileName = BBBDefinitions.PWM_FILENAME_ENABLE.Replace("%chipNum%", ConvertPWMPortEnumToChipNumber(PWMPort).ToString()).Replace("%deviceNum%", ConvertPWMPortEnumToDeviceNumber(PWMPort).ToString());
                 string outStr = System.IO.File.ReadAllText(pwmFileName);
                 //Console.WriteLine("Get Run State : outStr=" + outStr);
 
@@ -208,7 +216,7 @@ namespace BBBCSIO
                 // set the run state
                 string outVal = "0";
                 if (value == true) outVal = "1";
-                string pwmFileName = BBBDefinitions.PWM_FILENAME_RUN.Replace("%port%", ConvertPWMPortEnumToExportNumber(PWMPort).ToString());
+                string pwmFileName = BBBDefinitions.PWM_FILENAME_ENABLE.Replace("%chipNum%", ConvertPWMPortEnumToChipNumber(PWMPort).ToString()).Replace("%deviceNum%", ConvertPWMPortEnumToDeviceNumber(PWMPort).ToString());
                 System.IO.File.WriteAllText(pwmFileName, outVal);
             }
         }            
@@ -219,14 +227,16 @@ namespace BBBCSIO
         /// 
         /// </summary>
         /// <history>
-        ///    20 Aug 15 Cynic - Originally written
+        ///    07 Mar 19 Cynic - Originally written
         /// </history>
         protected override void OpenPort()
-        { 
-            //Console.WriteLine("PWMPort Port Opening: "+ BBBDefinitions.PWM_FILENAME_EXPORT +", " + ConvertPWMPortEnumToExportNumber(PWMPort).ToString());
+        {
+
+            string outfileName = BBBDefinitions.PWM_FILENAME_EXPORT.Replace("%chipNum%", ConvertPWMPortEnumToChipNumber(PWMPort).ToString()).Replace("%deviceNum%", ConvertPWMPortEnumToDeviceNumber(PWMPort).ToString());
+            Console.WriteLine("PWMPort Port Opening: "+ outfileName + ", " + ConvertPWMPortEnumToDeviceNumber(PWMPort).ToString());
 
             // do the export
-            System.IO.File.WriteAllText(BBBDefinitions.PWM_FILENAME_EXPORT, ConvertPWMPortEnumToExportNumber(PWMPort).ToString());
+            System.IO.File.WriteAllText(outfileName, ConvertPWMPortEnumToDeviceNumber(PWMPort).ToString());
             portIsOpen = true;
 
             // the act of writing the PortExportNumber to the export file
@@ -234,7 +244,7 @@ namespace BBBCSIO
             // This directory contains files which we can use to enable the PWM
             // and set the pulse widths etc
 
-            //Console.WriteLine("PWMPort Port Opened: "+ PWMPort.ToString());
+            Console.WriteLine("PWMPort Port Opened: "+ PWMPort.ToString());
         }
 
 
@@ -244,18 +254,22 @@ namespace BBBCSIO
         /// 
         /// </summary>
         /// <history>
-        ///    20 Aug 15 Cynic - Originally written
+        ///    07 Mar 19 Cynic - Originally written
         /// </history>
         public override void ClosePort()
         {
+
+            string outfileName = BBBDefinitions.PWM_FILENAME_UNEXPORT.Replace("%chipNum%", ConvertPWMPortEnumToChipNumber(PWMPort).ToString()).Replace("%deviceNum%", ConvertPWMPortEnumToDeviceNumber(PWMPort).ToString());
+            Console.WriteLine("PWMPort Port Closing: " + outfileName + ", " + ConvertPWMPortEnumToDeviceNumber(PWMPort).ToString());
+
             // do the unexport
-            System.IO.File.WriteAllText(BBBDefinitions.PWM_FILENAME_UNEXPORT, ConvertPWMPortEnumToExportNumber(PWMPort).ToString());
+            System.IO.File.WriteAllText(outfileName, ConvertPWMPortEnumToDeviceNumber(PWMPort).ToString());
             portIsOpen = false;
 
             // the act of writing the PortExportNumber to the unexport file
-            // will remove the directory /sys/class/pwm/pwm<PortExportNumber> 
+            // will remove the directory /sys/class/pwm/pwm<PortExportNumber>:
     
-            //Console.WriteLine("PWMPort Port Closed: "+ PWMPort.ToString());
+            Console.WriteLine("PWMPort Port Closed: "+ PWMPort.ToString());
 
         }
 
@@ -264,7 +278,7 @@ namespace BBBCSIO
         /// Gets the PWM Port. There is no Set accessor this is set in the constructor
         /// </summary>
         /// <history>
-        ///    20 Aug 15 Cynic - Originally written
+        ///    07 Mar 19 Cynic - Originally written
         /// </history>
         public PWMPortEnum PWMPort
         {
@@ -279,36 +293,55 @@ namespace BBBCSIO
         /// Gets the PortDirection
         /// </summary>
         /// <history>
-        ///    20 Aug 15 Cynic - Originally written
+        ///    07 Mar 19 Cynic - Originally written
         /// </history>
         public override PortDirectionEnum PortDirection()
         {
             return PortDirectionEnum.PORTDIR_OUTPUT;
-        }           
+        }
 
         /// +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
         /// <summary>
         /// The sysfs system requires a number to be used in order to 
-        /// export and manipulate the PWM device we wish to use. This function 
+        /// specify the EHRPWM chip in use
+        /// </summary>
+        /// <param name="pwmPortIn">The PWM port we use</param>
+        /// <returns>the export number</returns>
+        /// <history>
+        ///    03 Mar 19  Cynic - Originally written
+        /// </history>
+        public uint ConvertPWMPortEnumToChipNumber(PWMPortEnum pwmPortIn)
+        {
+            if (pwmPortIn == PWMPortEnum.PWM0_A) return 0; // 0 - EHRPWM0A
+            if (pwmPortIn == PWMPortEnum.PWM0_B) return 0; // 1 - EHRPWM0B    
+            if (pwmPortIn == PWMPortEnum.PWM1_A) return 2; // 3 - EHRPWM1A
+            if (pwmPortIn == PWMPortEnum.PWM1_B) return 2; // 4 - EHRPWM1B
+            if (pwmPortIn == PWMPortEnum.PWM2_A) return 4; // 5 - EHRPWM2A
+            if (pwmPortIn == PWMPortEnum.PWM2_B) return 4; // 6 - EHRPWM2B
+            throw new Exception("Unknown PWM Port: "+ pwmPortIn.ToString());
+        }
+
+        /// +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+        /// <summary>
+        /// The sysfs system requires a number to be used in order to 
+        /// specify a specific PWM device on a EHRPWM chip This function 
         /// converts the PWMPortEnum value to that number
         /// </summary>
         /// <param name="pwmPortIn">The PWM port we use</param>
         /// <returns>the export number</returns>
         /// <history>
-        ///    20 Aug 15  Cynic - Originally written
-        ///    21 Nov 15  Cynic - Converted to new PWM Port Enum names
+        ///    07 Mar 19  Cynic - Originally written
+        ///    03 Mar 19  Cynic - Converted to new PWM Port Enum names
         /// </history>
-        public uint ConvertPWMPortEnumToExportNumber(PWMPortEnum pwmPortIn)
+        public uint ConvertPWMPortEnumToDeviceNumber(PWMPortEnum pwmPortIn)
         {
-            if (pwmPortIn == PWMPortEnum.PWM_P9_22_or_P9_31) return 0; // 0 - EHRPWM0A
-            if (pwmPortIn == PWMPortEnum.PWM_P9_21_or_P9_29) return 1; // 1 - EHRPWM0B    
-            // 21 Nov 15        if (pwmPortIn == PWMPortEnum.PWM_P9_42) return 2;          // 2 - ECAPPWM0
-            if (pwmPortIn == PWMPortEnum.PWM_P9_14_or_P8_36) return 3; // 3 - EHRPWM1A
-            if (pwmPortIn == PWMPortEnum.PWM_P9_16_or_P8_34) return 4; // 4 - EHRPWM1B
-            if (pwmPortIn == PWMPortEnum.PWM_P8_19_or_P8_45) return 5; // 5 - EHRPWM2A
-            if (pwmPortIn == PWMPortEnum.PWM_P8_13_or_P8_46) return 6; // 6 - EHRPWM2B
-            // 21 Nov 15 if (pwmPortIn == PWMPortEnum.PWM_P9_28) return 7;          // 7 - ECAPPWM2
-            throw new Exception("Unknown PWM Port: "+ pwmPortIn.ToString());
+            if (pwmPortIn == PWMPortEnum.PWM0_A) return 0; // 0 - EHRPWM0A
+            if (pwmPortIn == PWMPortEnum.PWM0_B) return 1; // 1 - EHRPWM0B    
+            if (pwmPortIn == PWMPortEnum.PWM1_A) return 0; // 3 - EHRPWM1A
+            if (pwmPortIn == PWMPortEnum.PWM1_B) return 1; // 4 - EHRPWM1B
+            if (pwmPortIn == PWMPortEnum.PWM2_A) return 0; // 5 - EHRPWM2A
+            if (pwmPortIn == PWMPortEnum.PWM2_B) return 1; // 6 - EHRPWM2B
+            throw new Exception("Unknown PWM Port: " + pwmPortIn.ToString());
         }
 
         // #########################################################################

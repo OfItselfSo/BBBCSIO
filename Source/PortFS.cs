@@ -166,8 +166,11 @@ namespace BBBCSIO
                 // unmanaged resources here. If disposing is false, 
                 // only the following code is executed.
 
-                // Clean up our port        
-                ClosePort();
+                // Clean up our port   
+                // 07 Mar 19 - v1.08+ we no longer close the port in the dispose
+                // this must be done separately. Hard to trap errors were 
+                // being thrown
+                // ClosePort();
 
                 // call the base to dispose there
                 base.Dispose(disposing);

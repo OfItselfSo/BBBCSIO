@@ -24,12 +24,10 @@
 <P>
 The PWMPort class controls one of the six Pulse Width Modulation On Chip Peripheral (OCP) outputs integrated into the Beaglebone Black CPU. 
 In the Linux operating system there are two ways of accessing the PWM devices. The first, file system access using device drivers, is the 
-standard and approved Linux technique. If the existence of a PWM port is detected during boot time, the PWM device driver interface will be exposed as files in the <code>/sys/class/pwm/export/</code> directory of the Beaglebone Black file system. The PWM ports will only be detected if that port is appropriately configured in the Device Tree.
+standard and approved Linux technique. If the existence of a PWM port is detected during boot time, the PWM device driver interface will be exposed as files in the <code>/sys/class/pwm/</code> directory of the Beaglebone Black file system. The PWM ports will only be detected if that port is appropriately configured in the Device Tree.
 <P>
 The second type of access is called Memory Mapped access and this treats the Beaglebone Black's RAM memory as if it were a file. The PWM port is manipulated as if
 it were a bit at an offset in a virtual file. 
-<P>
-Previous versions of the BBBCSIO library provided a class which utilized file system access to the PWM port - however access to those devices was problematic to configure in the device tree and it was removed as of version 01.06. Until that issue is resolved, the memory mapped class named <a href="BBBCSIOHelp_PWMPortMM.html">PWMPortMM</a> is the only one available.
 <P>
 There are twelve possible pins on the Beaglebone Black P8 and P9 headers which could, theoretically, output PWM signals. However, there are complications.
 Some of the pins are connected to the same PWM output and will only ever output the same signal. Also, some of the PWM outputs use the same base PWM OCP Device and, although they can output signals with independent duty cycles, the frequency of each module must be the same.
@@ -54,7 +52,7 @@ See the comments in the example code below for an explanation of the meaning of 
 <P>
 The header pin used in the examples below is P9_14. This means the PWM port <code>PWMPortEnum.PWM1_A</code> is used. This, according to the table above,
 is connected to the <code>EHRPWM1A</code> OCP PWM device. The PinMux state for P9_14 (although P8_36 could also be used) must be configured in 
-the Device Tree in order for it to be available for use. Be aware that if you also create another <a href="BBBCSIOHelp_PWMPortMM.html">PWMPortMM</a> object on PWM1_B (pins P9_16 or P8_34) the frequency of the PWM port must be configured to be identical (they share the <code>EHRPWM1</code> PWM device) but they could have an independent duty cycle. It is up to you to make sure that the header pin you choose to use is available for use (i.e. it is not in use by some other device on the Beaglebone Black) and is appropriately configured with a Device Tree Overlay. 
+the Device Tree in order for it to be available for use. Be aware that if you also create another <a href="BBBCSIOHelp_PWMPortFS.html">PWMPortFS</a> object on PWM1_B (pins P9_16 or P8_34) the frequency of the PWM port must be configured to be identical (they share the <code>EHRPWM1</code> PWM device) but they could have an independent duty cycle. It is up to you to make sure that the header pin you choose to use is available for use (i.e. it is not in use by some other device on the Beaglebone Black) and is appropriately configured with a Device Tree Overlay. 
 <P>
 Make sure you configure the duty cycle after you set the frequency on the port. The frequency is used to set the proper timings for the duty cycle and the duty cycle is 
 not automatically adjusted if you change the base frequency of the PWM device.
@@ -68,7 +66,7 @@ as the process is pre-emotively swapped in and out by the kernel.
 <A name="Example"></A>
 <h2>An Example of the PWMPort Usage</h2>
 <P>
-The code below illustrates how to use the PWMPortMM class to configure a PWM device output a variety of duty cycle waveforms. 
+The code below illustrates how to use the PWMPortFS class to configure a PWM device output a variety of duty cycle waveforms. 
 <pre>
         /// +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
         /// &lt;summary&gt;
@@ -80,11 +78,18 @@ The code below illustrates how to use the PWMPortMM class to configure a PWM dev
         /// NOTE: 
         ///   This code assumes that the PWM device has been configured in the 
         ///   device tree. If it is not, then the PWM Port will probably not
-        ///   be available. I typically use a variation on the BBBIO-EHRPWM
-        ///   device tree source. This code is included with the BBBCSIO library
-        ///   in the file
-        ///   
-        ///   BBBIO-EHRPWM-00A0.dts
+        ///   be available. Usually this is done by adding the 
+        ///   overlay to the uEnv.txt file. The Beaglebone Black and Device Tree Overlays
+        ///   technical note has more information.
+        /// 
+        /// http://www.ofitselfso.com/BeagleNotes/Beaglebone_Black_And_Device_Tree_Overlays.php
+        ///
+        /// Any of the entries below placed in the /boot/uEnv.txt file will enable the 
+        /// specified PWM ports. You may need to edit the .dts source if you only want A and 
+        /// not B etc.
+        /// uboot_overlay_addr4=/lib/firmware/BB-PWM0-00A0.dtbo (PWM0_A & PWM0_B)
+        /// uboot_overlay_addr5=/lib/firmware/BB-PWM1-00A0.dtbo (PWM1_A & PWM1_B)
+        /// uboot_overlay_addr6=/lib/firmware/BB-PWM2-00A0.dtbo (PWM2_A & PWM2_B)
         ///   
         ///   You should conduct the usual tests to make sure the PWM header pin
         ///   you wish to use is available and not in use by anything else on 
@@ -137,17 +142,17 @@ The code below illustrates how to use the PWMPortMM class to configure a PWM dev
         /// &lt;/summary&gt;
         /// &lt;param name="pwmID"&gt;The pwmID&lt;/param&gt;
         /// &lt;history&gt;
-        ///    21 Nov 15  Cynic - Originally written
+        ///    07 Mar 19  Cynic - Originally written
         /// &lt;/history&gt;
-        public void SimpleTestPWM_MM(PWMPortEnum pwmID)
+        public void SimpleTestPWM_FS(PWMPortEnum pwmID)
         {
             const uint DEFAULT_PERIOD_NS = 250000;
-            const uint DEFAULT_DUTY_50PERCENT = (uint)(DEFAULT_PERIOD_NS*(0.5));
-            const uint DEFAULT_DUTY_75PERCENT = (uint)(DEFAULT_PERIOD_NS*(0.75));
-            const uint DEFAULT_DUTY_25PERCENT = (uint)(DEFAULT_PERIOD_NS*(0.25));
+            const uint DEFAULT_DUTY_50PERCENT = (uint)(DEFAULT_PERIOD_NS * (0.5));
+            const uint DEFAULT_DUTY_75PERCENT = (uint)(DEFAULT_PERIOD_NS * (0.75));
+            const uint DEFAULT_DUTY_25PERCENT = (uint)(DEFAULT_PERIOD_NS * (0.25));
 
             // open the port
-            PWMPortMM pwmPort = new PWMPortMM(pwmID);
+            PWMPortFS pwmPort = new PWMPortFS(pwmID);
 
             // set the PWM waveform period
             pwmPort.PeriodNS = DEFAULT_PERIOD_NS;
@@ -180,34 +185,34 @@ The code below illustrates how to use the PWMPortMM class to configure a PWM dev
                 pwmPort.DutyNS = DEFAULT_DUTY_25PERCENT;
                 if (Console.KeyAvailable == true) break;
                 Console.WriteLine("DutyPercent is: " + pwmPort.DutyPercent.ToString());
-                Thread.Sleep(3000);
+                Thread.Sleep(1000);
                 // set the Duty Cycle midway
                 pwmPort.DutyNS = DEFAULT_DUTY_50PERCENT;
                 if (Console.KeyAvailable == true) break;
                 Console.WriteLine("DutyPercent is: " + pwmPort.DutyPercent.ToString());
-                Thread.Sleep(3000);
+                Thread.Sleep(1000);
                 // set the Duty Cycle high
                 pwmPort.DutyNS = DEFAULT_DUTY_75PERCENT;
                 if (Console.KeyAvailable == true) break;
                 Console.WriteLine("DutyPercent is: " + pwmPort.DutyPercent.ToString());
-                Thread.Sleep(3000);
+                Thread.Sleep(1000);
                 // set the Duty Cycle midway
                 pwmPort.DutyNS = DEFAULT_DUTY_50PERCENT;
                 if (Console.KeyAvailable == true) break;
                 Console.WriteLine("DutyPercent is: " + pwmPort.DutyPercent.ToString());
-                Thread.Sleep(3000);
+                Thread.Sleep(1000);
 
                 Console.WriteLine("");
                 Console.WriteLine("Now Smoothly Rotating Servo");
 
                 // now we rotate the servo smoothly from
                 // 25.123% to 75.456% using a totally arbitrary increment
-                for (float i = 25.123f; i &lt; 75.345f; i=i+0.678f)
+                for (float i = 25.123f; i &lt; 75.345f; i = i + 0.678f)
                 {
                     pwmPort.DutyPercent = i;
                     if (Console.KeyAvailable == true) break;
                     Console.WriteLine("DutyPercent is: " + pwmPort.DutyPercent.ToString());
-                    Thread.Sleep(250);
+                    Thread.Sleep(50);
                 }
             }
 
@@ -217,13 +222,13 @@ The code below illustrates how to use the PWMPortMM class to configure a PWM dev
             // close the port
             pwmPort.ClosePort();
             pwmPort.Dispose();
-        }  
+        }
 </pre> 
 In the above code, the <code>pwmID</code> is passed in when the function was called. This value is a member of the 
 <code><a href="BBBCSIOHelp_PWMPortEnum.html">PWMPortEnum class</a></code> which lists all possible PWM ports which
 can be present on the Beaglebone Black. The above code is called via a line which looks like:
 <pre>
-SimpleTestPWM(PWMPortEnum.PWM1_A);
+SimpleTestPWM_FS(PWMPortEnum.PWM1_A);
 </pre> 
 <P>
 &nbsp;

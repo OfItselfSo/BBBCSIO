@@ -107,12 +107,12 @@ namespace BBBCSIO
         public const string A2DIIO_FILENAME = "/sys/bus/iio/devices/iio:device0/in_voltage%port%_raw";
 
         // the templates for the PWM device files
-        public const string PWM_FILENAME_EXPORT = "/sys/class/pwm/export";
-        public const string PWM_FILENAME_UNEXPORT = "/sys/class/pwm/unexport";
-        public const string PWM_FILENAME_DUTY = "/sys/class/pwm/pwm%port%/duty_ns";
-        public const string PWM_FILENAME_PERIOD = "/sys/class/pwm/pwm%port%/period_ns";
-        public const string PWM_FILENAME_RUN = "/sys/class/pwm/pwm%port%/run";
-        public const string PWM_FILENAME_POLARITY = "/sys/class/pwm/pwm%port%/polarity";
+        public const string PWM_FILENAME_EXPORT =   "/sys/class/pwm/pwmchip%chipNum%/export";
+        public const string PWM_FILENAME_UNEXPORT = "/sys/class/pwm/pwmchip%chipNum%/unexport";
+        public const string PWM_FILENAME_DUTY =     "/sys/class/pwm/pwmchip%chipNum%/pwm-%chipNum%:%deviceNum%/duty_cycle";
+        public const string PWM_FILENAME_PERIOD =   "/sys/class/pwm/pwmchip%chipNum%/pwm-%chipNum%:%deviceNum%/period";
+        public const string PWM_FILENAME_ENABLE =   "/sys/class/pwm/pwmchip%chipNum%/pwm-%chipNum%:%deviceNum%/enable";
+        public const string PWM_FILENAME_POLARITY = "/sys/class/pwm/pwmchip%chipNum%/pwm-%chipNum%:%deviceNum%/polarity";
 
     }
 }

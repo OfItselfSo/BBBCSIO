@@ -79,6 +79,7 @@
     <Compile Include="InterruptPortMM.cs" />
     <Compile Include="OutputPortMM.cs" />
     <Compile Include="InterruptEventHandlerMM.cs" />
+    <Compile Include="PWMPortFS.cs" />
     <Compile Include="SPIPortFS.cs" />
     <Compile Include="SPIPortEnum.cs" />
     <Compile Include="SPISlaveDeviceEnum.cs" />
